@@ -51,12 +51,12 @@ class Project {
   static async findByOwnerId(ownerId, limit = 50, offset = 0) {
     try {
       const query = `
-        SELECT * FROM projects 
-        WHERE owner_id = ? AND is_active = true 
-        ORDER BY created_at DESC 
-        LIMIT ? OFFSET ?
+        SELECT * FROM projects
+        WHERE owner_id = ? AND is_active = true
+        ORDER BY created_at DESC
+        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
-      const rows = await database.query(query, [ownerId, limit, offset]);
+      const rows = await database.query(query, [ownerId]);
       
       return rows.map(row => new Project(row));
     } catch (error) {

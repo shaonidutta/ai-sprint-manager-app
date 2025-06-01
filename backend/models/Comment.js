@@ -143,16 +143,16 @@ class Comment {
       }
 
       const query = `
-        SELECT c.*, 
+        SELECT c.*,
                u.first_name, u.last_name, u.email, u.avatar_url
         FROM issue_comments c
         INNER JOIN users u ON c.user_id = u.id
         WHERE c.issue_id = ?
         ORDER BY c.created_at ASC
-        LIMIT ? OFFSET ?
+        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
-      
-      const rows = await database.query(query, [issueId, limit, offset]);
+
+      const rows = await database.query(query, [issueId]);
       
       const comments = rows.map(row => {
         const comment = new Comment(row);

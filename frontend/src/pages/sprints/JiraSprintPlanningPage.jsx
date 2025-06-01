@@ -174,6 +174,7 @@ const SprintModal = ({ isOpen, onClose, boardId, onSprintCreated }) => {
               Sprint Name *
             </label>
             <Input
+              id="sprint-name"
               name="name"
               value={formData.name}
               onChange={handleChange}
@@ -188,6 +189,7 @@ const SprintModal = ({ isOpen, onClose, boardId, onSprintCreated }) => {
               Sprint Goal
             </label>
             <Input
+              id="sprint-goal"
               name="goal"
               value={formData.goal}
               onChange={handleChange}
@@ -202,6 +204,7 @@ const SprintModal = ({ isOpen, onClose, boardId, onSprintCreated }) => {
                 Start Date
               </label>
               <Input
+                id="sprint-start-date"
                 name="startDate"
                 type="date"
                 value={formData.startDate}
@@ -214,6 +217,7 @@ const SprintModal = ({ isOpen, onClose, boardId, onSprintCreated }) => {
                 End Date
               </label>
               <Input
+                id="sprint-end-date"
                 name="endDate"
                 type="date"
                 value={formData.endDate}
@@ -228,6 +232,7 @@ const SprintModal = ({ isOpen, onClose, boardId, onSprintCreated }) => {
               Capacity (Story Points)
             </label>
             <Input
+              id="sprint-capacity"
               name="capacityStoryPoints"
               type="number"
               value={formData.capacityStoryPoints}
@@ -465,7 +470,19 @@ const JiraSprintPlanningPage = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">Sprint Planning</h1>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/sprints')}
+              className="flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Back to Sprints</span>
+            </Button>
+            <h1 className="text-xl font-semibold text-gray-900">Sprint Planning</h1>
+          </div>
           <div className="flex items-center space-x-4">
             {/* Project Selector */}
             <div className="min-w-0 flex-1">
@@ -486,6 +503,8 @@ const JiraSprintPlanningPage = () => {
             {/* Search */}
             <div className="min-w-0 flex-1">
               <Input
+                id="search-issues"
+                name="searchIssues"
                 placeholder="Search issues..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

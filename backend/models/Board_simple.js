@@ -43,7 +43,7 @@ class BoardSimple {
         throw new ValidationError('Access denied to project');
       }
 
-      // Build query with parameterized LIMIT and OFFSET
+      // Build query with string interpolation for LIMIT and OFFSET (safe since we validated as integers)
       let query = 'SELECT * FROM boards WHERE project_id = ?';
       let queryParams = [projectIdInt];
 
@@ -52,8 +52,8 @@ class BoardSimple {
         queryParams.push(`%${search}%`, `%${search}%`);
       }
 
-      query += ' ORDER BY is_default DESC, created_at DESC LIMIT ? OFFSET ?';
-      queryParams.push(limitInt, offset);
+      // Use string interpolation for LIMIT and OFFSET to avoid MySQL parameter binding issues
+      query += ` ORDER BY is_default DESC, created_at DESC LIMIT ${limitInt} OFFSET ${offset}`;
 
       logger.info('Executing simple boards query:', { query, queryParams });
       const rows = await database.query(query, queryParams);

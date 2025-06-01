@@ -65,9 +65,8 @@ class UserActivity {
         params.push(resource_type);
       }
       
-      query += ' ORDER BY ua.created_at DESC LIMIT ? OFFSET ?';
-      params.push(limit, offset);
-      
+      query += ` ORDER BY ua.created_at DESC LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
+
       const rows = await database.query(query, params);
       
       return rows.map(row => {
@@ -116,9 +115,8 @@ class UserActivity {
         params.push(action);
       }
       
-      query += ' ORDER BY ua.created_at DESC LIMIT ? OFFSET ?';
-      params.push(limit, offset);
-      
+      query += ` ORDER BY ua.created_at DESC LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
+
       const rows = await database.query(query, params);
       
       return rows.map(row => {
