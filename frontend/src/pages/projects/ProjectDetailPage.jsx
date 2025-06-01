@@ -149,6 +149,7 @@ const ProjectDetailPage = () => {
     { id: 'overview', label: 'Overview' },
     { id: 'boards', label: 'Boards' },
     { id: 'team', label: 'Team' },
+    { id: 'ai', label: 'AI Features' },
     { id: 'settings', label: 'Settings' }
   ];
 
@@ -272,6 +273,14 @@ const ProjectDetailPage = () => {
                 <Button fullWidth variant="outline" onClick={() => navigate(`/projects/${id}/team`)}>
                   Manage Team
                 </Button>
+                <Button 
+                  fullWidth 
+                  variant="outline" 
+                  onClick={() => setActiveTab('ai')}
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700"
+                >
+                  AI Features
+                </Button>
               </div>
             </Card>
           </div>
@@ -375,6 +384,123 @@ const ProjectDetailPage = () => {
               Open Settings
             </Button>
           </Card>
+        )}
+
+        {activeTab === 'ai' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">AI Features</h2>
+              <p className="text-gray-600">
+                Enhance your project management with our AI-powered features
+              </p>
+            </div>
+
+            {/* Features Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Sprint Planning Assistant */}
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-4xl">📅</span>
+                    <button
+                      onClick={() => navigate(`/ai/sprint-planning/${id}`)}
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    >
+                      Try Now
+                    </button>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mt-4">
+                    Sprint Planning Assistant
+                  </h3>
+                  <p className="text-white text-opacity-90 mt-2">
+                    AI-powered sprint planning suggestions based on team velocity, capacity, and historical data.
+                  </p>
+                </div>
+              </div>
+
+              {/* Scope Creep Detection */}
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-gradient-to-r from-red-500 to-pink-600 p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-4xl">🔍</span>
+                    <button
+                      onClick={() => navigate(`/ai/scope-creep/${id}`)}
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    >
+                      Analyze Now
+                    </button>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mt-4">
+                    Scope Creep Detection
+                  </h3>
+                  <p className="text-white text-opacity-90 mt-2">
+                    Early detection of potential scope creep using AI analysis of requirements and changes.
+                  </p>
+                </div>
+              </div>
+
+              {/* Risk Assessment */}
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-gradient-to-r from-yellow-500 to-orange-600 p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-4xl">⚠️</span>
+                    <button
+                      onClick={() => navigate(`/ai/risk-assessment/${id}`)}
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    >
+                      Assess Risks
+                    </button>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mt-4">
+                    Risk Assessment
+                  </h3>
+                  <p className="text-white text-opacity-90 mt-2">
+                    AI-driven project risk assessment and mitigation recommendations.
+                  </p>
+                </div>
+              </div>
+
+              {/* Sprint Retrospective */}
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-4xl">🎯</span>
+                    <button
+                      onClick={() => navigate(`/ai/retrospective/${id}`)}
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    >
+                      Generate Insights
+                    </button>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mt-4">
+                    Sprint Retrospective Insights
+                  </h3>
+                  <p className="text-white text-opacity-90 mt-2">
+                    AI analysis of sprint performance and team collaboration patterns.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Dashboard Link */}
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 mt-6">
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">AI Features Dashboard</h3>
+                    <p className="text-gray-600 mt-2">View all AI insights and analytics in one place</p>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/ai/dashboard/${id}`)}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors duration-200"
+                  >
+                    Open Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Create Board Modal */}
