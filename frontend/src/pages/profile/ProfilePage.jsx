@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import PersonalInformation from '../../components/profile/PersonalInformation';
 import AccountSettings from '../../components/profile/AccountSettings';
 import NotificationPreferences from '../../components/profile/NotificationPreferences';
 
 const ProfilePage = () => {
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
 
   const tabs = [
@@ -52,6 +54,10 @@ const ProfilePage = () => {
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Profile Header */}
@@ -61,9 +67,13 @@ const ProfilePage = () => {
             {/* Avatar */}
             <div className="relative group">
               <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )}
               </div>
               <button className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50">
                 <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,8 +85,10 @@ const ProfilePage = () => {
             
             {/* User Info */}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">John Doe</h1>
-              <p className="text-sm text-gray-500">john.doe@example.com</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
+              </h1>
+              <p className="text-sm text-gray-500">{user?.email}</p>
             </div>
           </div>
         </div>

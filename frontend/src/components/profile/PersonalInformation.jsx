@@ -1,18 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 
 const PersonalInformation = () => {
+  const { user, loading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    jobTitle: 'Software Engineer',
-    department: 'Engineering',
-    location: 'New York, USA',
-    bio: 'Full-stack developer with a passion for building great user experiences.'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    jobTitle: '',
+    department: '',
+    location: '',
+    bio: ''
   });
+
+  useEffect(() => {
+    console.log('PersonalInformation: Current user data:', user);
+    if (user) {
+      setFormData({
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        jobTitle: user.job_title || '',
+        department: user.department || '',
+        location: user.location || '',
+        bio: user.bio || ''
+      });
+    }
+  }, [user]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
