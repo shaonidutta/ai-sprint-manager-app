@@ -4,8 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../routes/constants';
 import { 
   HomeIcon, ViewBoardsIcon, ProjectIcon, 
-  SprintIcon, SettingsIcon, AIIcon,
-  MenuIcon
+  SprintIcon, SettingsIcon
 } from '../common/Icons';
 
 const Sidebar = ({ isMobile, onClose }) => {
@@ -13,22 +12,13 @@ const Sidebar = ({ isMobile, onClose }) => {
   const { user } = useAuth();
   const { projectId } = useParams();
 
-  const getNavItems = (currentProjectId) => [
-    { path: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
-    { path: '/projects', icon: ProjectIcon, label: 'Projects' },
-    { path: '/board', icon: ViewBoardsIcon, label: 'Board' },
-    { path: '/boards', icon: ViewBoardsIcon, label: 'Boards List' },
-    { path: '/sprints', icon: SprintIcon, label: 'Sprints' },
-    {
-      path: currentProjectId ? `/projects/${currentProjectId}/ai-features` : '/ai-features',
-      icon: AIIcon,
-      label: 'AI Features',
-      disabled: !currentProjectId
-    },
-    { path: '/settings', icon: SettingsIcon, label: 'Settings' },
+  const navItems = [
+    { id: 'dashboard', path: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
+    { id: 'projects', path: '/projects', icon: ProjectIcon, label: 'Projects' },
+    { id: 'boards', path: '/boards', icon: ViewBoardsIcon, label: 'Boards' },
+    { id: 'sprints', path: '/sprints', icon: SprintIcon, label: 'Sprints' },
+    { id: 'settings', path: '/settings', icon: SettingsIcon, label: 'Settings' },
   ];
-
-  const navItems = getNavItems(projectId);
 
   const sidebarClasses = `
     fixed md:relative bg-gray-900 text-white transition-all duration-300 ease-in-out h-full
@@ -64,21 +54,15 @@ const Sidebar = ({ isMobile, onClose }) => {
         {/* Navigation */}
         <nav className="mt-4 flex flex-col h-[calc(100%-4rem)]">
           <div className="flex-1">
-            {navItems.map(({ path, icon: Icon, label, disabled }) => (
+            {navItems.map(({ id, path, icon: Icon, label }) => (
               <NavLink
-                key={path}
+                key={id}
                 to={path}
                 className={({ isActive }) => `
                   flex items-center px-4 py-3 text-sm
                   ${isActive ? 'bg-blue-600' : 'hover:bg-gray-800'}
-                  ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
                   transition-colors duration-200
                 `}
-                onClick={(e) => {
-                  if (disabled) {
-                    e.preventDefault();
-                  }
-                }}
               >
                 <Icon className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : 'mr-3'}`} />
                 {!isCollapsed && <span>{label}</span>}
