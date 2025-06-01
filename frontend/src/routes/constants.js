@@ -29,10 +29,10 @@ export const ROUTES = {
   SPRINT_RETROSPECTIVE: '/sprints/:sprintId/retro',
 
   // AI Features Routes
-  AI_FEATURES: '/ai-features',
-  AI_SPRINT_PLANNING: '/ai-features/sprint-planning',
-  AI_RISK_ASSESSMENT: '/ai-features/risk-assessment',
-  AI_INSIGHTS: '/ai-features/insights',
+  AI_FEATURES: (projectId) => `/projects/${projectId}/ai-features`,
+  AI_SPRINT_PLANNING: (projectId) => `/projects/${projectId}/ai-features/sprint-planning`,
+  AI_RISK_ASSESSMENT: (projectId) => `/projects/${projectId}/ai-features/risk-assessment`,
+  AI_INSIGHTS: (projectId) => `/projects/${projectId}/ai-features/insights`,
 };
 
 // Helper function to replace route parameters
