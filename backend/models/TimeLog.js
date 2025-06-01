@@ -188,16 +188,15 @@ class TimeLog {
       }
 
       const query = `
-        SELECT tl.*, 
+        SELECT tl.*,
                u.first_name, u.last_name, u.email
         FROM time_logs tl
         INNER JOIN users u ON tl.user_id = u.id
         ${whereClause}
         ORDER BY tl.logged_date DESC, tl.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
-      
-      queryParams.push(limit, offset);
+
       const rows = await database.query(query, queryParams);
       
       const timeLogs = rows.map(row => {
@@ -214,11 +213,10 @@ class TimeLog {
       // Get total count and sum for pagination
       const countQuery = `
         SELECT COUNT(*) as total, SUM(time_spent) as total_time
-        FROM time_logs tl 
+        FROM time_logs tl
         ${whereClause}
       `;
-      const countParams = queryParams.slice(0, -2); // Remove limit and offset
-      const countResult = await database.query(countQuery, countParams);
+      const countResult = await database.query(countQuery, queryParams);
       const { total, total_time } = countResult[0];
 
       return {
@@ -261,7 +259,7 @@ class TimeLog {
       }
 
       const query = `
-        SELECT tl.*, 
+        SELECT tl.*,
                i.title as issue_title,
                p.name as project_name, p.key as project_key
         FROM time_logs tl
@@ -271,10 +269,10 @@ class TimeLog {
         INNER JOIN user_projects up ON p.id = up.project_id
         ${whereClause} AND up.user_id = ? AND up.deleted_at IS NULL
         ORDER BY tl.logged_date DESC, tl.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
-      
-      queryParams.push(userId, limit, offset);
+
+      queryParams.push(userId);
       const rows = await database.query(query, queryParams);
       
       const timeLogs = rows.map(row => {

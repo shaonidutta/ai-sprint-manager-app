@@ -313,10 +313,9 @@ class Issue {
         LEFT JOIN sprints s ON i.sprint_id = s.id
         ${whereClause}
         ORDER BY i.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
 
-      queryParams.push(limit, offset);
       const rows = await database.query(query, queryParams);
 
       const issues = rows.map(row => {
@@ -344,8 +343,7 @@ class Issue {
         FROM issues i
         ${whereClause}
       `;
-      const countParams = queryParams.slice(0, -2); // Remove limit and offset
-      const countResult = await database.query(countQuery, countParams);
+      const countResult = await database.query(countQuery, queryParams);
       const total = countResult[0].total;
 
       return {
