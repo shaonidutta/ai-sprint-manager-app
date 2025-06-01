@@ -16,11 +16,12 @@ const Sidebar = ({ isMobile, onClose }) => {
   const getNavItems = (currentProjectId) => [
     { path: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
     { path: '/projects', icon: ProjectIcon, label: 'Projects' },
-    { path: '/boards', icon: ViewBoardsIcon, label: 'Boards' },
+    { path: '/board', icon: ViewBoardsIcon, label: 'Board' },
+    { path: '/boards', icon: ViewBoardsIcon, label: 'Boards List' },
     { path: '/sprints', icon: SprintIcon, label: 'Sprints' },
-    { 
-      path: currentProjectId ? `/projects/${currentProjectId}/ai-features` : '/projects',
-      icon: AIIcon, 
+    {
+      path: currentProjectId ? `/projects/${currentProjectId}/ai-features` : '/ai-features',
+      icon: AIIcon,
       label: 'AI Features',
       disabled: !currentProjectId
     },

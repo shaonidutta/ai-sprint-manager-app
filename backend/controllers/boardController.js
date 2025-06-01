@@ -21,10 +21,10 @@ class BoardController {
       logger.info('Using simplified boards query to avoid malformed packet issues');
       const result = await BoardSimple.findByProjectIdSimple(projectId, userId, options);
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Boards retrieved successfully',
-        data: result
-      }));
+      res.status(200).json(formatSuccessResponse(
+        result,
+        'Boards retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting project boards:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -44,10 +44,10 @@ class BoardController {
       // This will throw an error if user doesn't have access
       await Board.findByProjectId(projectId, userId, { limit: 1 });
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Board retrieved successfully',
-        data: { board }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { board },
+        'Board retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting board by ID:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -71,10 +71,10 @@ class BoardController {
 
       const board = await Board.create(boardData);
 
-      res.status(201).json(formatSuccessResponse({
-        message: 'Board created successfully',
-        data: { board }
-      }));
+      res.status(201).json(formatSuccessResponse(
+        { board },
+        'Board created successfully'
+      ));
     } catch (error) {
       logger.error('Error creating board:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -112,10 +112,10 @@ class BoardController {
 
       await board.save();
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Board updated successfully',
-        data: { board }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { board },
+        'Board updated successfully'
+      ));
     } catch (error) {
       logger.error('Error updating board:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -136,9 +136,10 @@ class BoardController {
 
       await board.delete();
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Board deleted successfully'
-      }));
+      res.status(200).json(formatSuccessResponse(
+        null,
+        'Board deleted successfully'
+      ));
     } catch (error) {
       logger.error('Error deleting board:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -168,10 +169,10 @@ class BoardController {
 
       const issues = await board.getIssues(options);
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Board issues retrieved successfully',
-        data: { issues }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { issues },
+        'Board issues retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting board issues:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -206,17 +207,17 @@ class BoardController {
         kanbanData[status] = issues;
       }
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Kanban view retrieved successfully',
-        data: { 
+      res.status(200).json(formatSuccessResponse(
+        {
           board: {
             id: board.id,
             name: board.name,
             description: board.description
           },
           columns: kanbanData
-        }
-      }));
+        },
+        'Kanban view retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting kanban view:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));

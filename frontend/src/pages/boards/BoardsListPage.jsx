@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Button, Input } from '../../components/common';
+import { BoardKanbanPreview } from '../../components/board';
 import { api } from '../../api';
 
 const BoardsListPage = () => {
@@ -9,9 +10,11 @@ const BoardsListPage = () => {
   const projectId = searchParams.get('project');
 
   const [boards, setBoards] = useState([]);
+  const [boardIssues, setBoardIssues] = useState({}); // Store issues for each board
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(projectId || '');
   const [loading, setLoading] = useState(true);
+  const [issuesLoading, setIssuesLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -31,10 +34,47 @@ const BoardsListPage = () => {
     }
   };
 
+  // Fetch issues for a specific board
+  const fetchBoardIssues = async (boardId) => {
+    try {
+      const response = await api.issues.getAll(boardId);
+      return response.data.data.issues || [];
+    } catch (err) {
+      console.error(`Failed to fetch issues for board ${boardId}:`, err);
+      return [];
+    }
+  };
+
+  // Fetch issues for all boards
+  const fetchAllBoardIssues = async (boards) => {
+    if (boards.length === 0) return;
+
+    try {
+      setIssuesLoading(true);
+      const issuesPromises = boards.map(board =>
+        fetchBoardIssues(board.id).then(issues => ({ boardId: board.id, issues }))
+      );
+
+      const issuesResults = await Promise.all(issuesPromises);
+      const issuesMap = {};
+
+      issuesResults.forEach(({ boardId, issues }) => {
+        issuesMap[boardId] = issues;
+      });
+
+      setBoardIssues(issuesMap);
+    } catch (err) {
+      console.error('Failed to fetch board issues:', err);
+    } finally {
+      setIssuesLoading(false);
+    }
+  };
+
   // Fetch boards for selected project
   const fetchBoards = async (projectId) => {
     if (!projectId) {
       setBoards([]);
+      setBoardIssues({});
       setLoading(false);
       return;
     }
@@ -43,14 +83,20 @@ const BoardsListPage = () => {
       setLoading(true);
       const response = await api.boards.getAll(projectId);
       const boardsData = response.data.data.boards || [];
+
       // Filter out any undefined or invalid board objects
       const validBoards = boardsData.filter(board => board && board.id && board.name);
+
       setBoards(validBoards);
       setError(null);
+
+      // Fetch issues for all boards
+      await fetchAllBoardIssues(validBoards);
     } catch (err) {
       console.error('Failed to fetch boards:', err);
       setError('Failed to load boards. Please try again.');
       setBoards([]); // Set empty array on error
+      setBoardIssues({});
     } finally {
       setLoading(false);
     }
@@ -65,6 +111,7 @@ const BoardsListPage = () => {
       fetchBoards(selectedProject);
     } else {
       setBoards([]);
+      setBoardIssues({});
       setLoading(false);
     }
   }, [selectedProject]);
@@ -87,15 +134,21 @@ const BoardsListPage = () => {
 
   const handleCreateBoard = async (e) => {
     e.preventDefault();
-    if (!selectedProject) return;
+    if (!selectedProject || !createFormData.name.trim()) return;
 
     try {
       setCreating(true);
-      const response = await api.boards.create(selectedProject, createFormData);
-      const newBoard = response.data.data.board;
-      setBoards(prev => [newBoard, ...prev]);
-      setShowCreateModal(false);
+      await api.boards.create(selectedProject, {
+        name: createFormData.name.trim(),
+        description: createFormData.description.trim() || null
+      });
+
+      // Reset form and close modal
       setCreateFormData({ name: '', description: '' });
+      setShowCreateModal(false);
+
+      // Refresh boards list (this will also fetch issues for the new board)
+      await fetchBoards(selectedProject);
     } catch (err) {
       console.error('Failed to create board:', err);
       setError('Failed to create board. Please try again.');
@@ -233,10 +286,23 @@ const BoardsListPage = () => {
                   <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 mb-4">
                 <div className="h-3 bg-neutral-200 rounded"></div>
                 <div className="h-3 bg-neutral-200 rounded w-5/6"></div>
               </div>
+              {/* Mini Kanban skeleton */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {[...Array(3)].map((_, colIndex) => (
+                  <div key={colIndex} className="space-y-2">
+                    <div className="h-6 bg-neutral-200 rounded"></div>
+                    <div className="space-y-1">
+                      <div className="h-12 bg-neutral-200 rounded"></div>
+                      <div className="h-12 bg-neutral-200 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
             </Card>
           ))}
         </div>
@@ -260,44 +326,27 @@ const BoardsListPage = () => {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBoards.map((board) => (
-            <Card
-              key={board.id}
-              className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => handleBoardClick(board.id)}
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-blue-500 text-white rounded-md flex items-center justify-center font-medium">
-                  {getBoardInitials(board.name)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-medium text-neutral-900 truncate">
-                    {board.name}
-                  </h3>
-                  <p className="text-sm text-neutral-500">
-                    Board
-                  </p>
-                </div>
+        <div className="space-y-4">
+          {/* Loading indicator for issues */}
+          {issuesLoading && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-sm text-blue-700">Loading board issues...</span>
               </div>
+            </div>
+          )}
 
-              {board.description && (
-                <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
-                  {board.description}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between text-sm text-neutral-500">
-                <span>Updated {formatDate(board.updated_at)}</span>
-                <div className="flex items-center space-x-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
-                  </svg>
-                  <span>Kanban</span>
-                </div>
-              </div>
-            </Card>
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredBoards.map((board) => (
+              <BoardKanbanPreview
+                key={board.id}
+                board={board}
+                issues={boardIssues[board.id] || []}
+                onClick={() => handleBoardClick(board.id)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
