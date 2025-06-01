@@ -130,12 +130,22 @@ const BoardPage = () => {
   const fetchBoard = async () => {
     try {
       setLoading(true);
+      console.log('[BoardPage] Fetching board with ID:', id);
       const response = await api.boards.getById(id);
-      setBoard(response.data.data.board);
-      setError(null);
+      console.log('[BoardPage] Board API response:', response);
+
+      if (response.data && response.data.data && response.data.data.board) {
+        setBoard(response.data.data.board);
+        setError(null);
+        console.log('[BoardPage] Board loaded successfully:', response.data.data.board);
+      } else {
+        console.error('[BoardPage] Invalid board response structure:', response);
+        setError('Invalid board data received from server.');
+      }
     } catch (err) {
-      console.error('Failed to fetch board:', err);
-      setError('Failed to load board details. Please try again.');
+      console.error('[BoardPage] Failed to fetch board:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load board details. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

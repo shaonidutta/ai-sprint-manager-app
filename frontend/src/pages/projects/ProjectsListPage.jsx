@@ -69,6 +69,11 @@ const ProjectsListPage = () => {
   };
 
   const handleProjectClick = (projectId) => {
+    console.log('[ProjectsListPage] Navigating to project:', projectId);
+    if (!projectId) {
+      console.error('[ProjectsListPage] Project ID is missing');
+      return;
+    }
     navigate(`/projects/${projectId}`);
   };
 
@@ -183,12 +188,14 @@ const ProjectsListPage = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <Card 
-                key={project.id} 
-                className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => handleProjectClick(project.id)}
-              >
+            {projects.map((project) => {
+              console.log('[ProjectsListPage] Rendering project:', project);
+              return (
+                <Card
+                  key={project.id}
+                  className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => handleProjectClick(project.id)}
+                >
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="w-10 h-10 bg-primary-500 text-white rounded-md flex items-center justify-center font-medium">
                     {getProjectInitials(project.name)}
@@ -219,7 +226,8 @@ const ProjectsListPage = () => {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
 

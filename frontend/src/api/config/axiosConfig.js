@@ -67,12 +67,16 @@ axiosInstance.interceptors.response.use(
           refresh_token: refreshToken
         });
 
-        const { access_token } = response.data.data;
-        localStorage.setItem('token', access_token);
+        console.log('Refresh token response:', response.data);
+        const accessToken = response.data.data?.access_token || response.data.data?.token;
+        if (!accessToken) {
+          throw new Error('No access token in refresh response');
+        }
+        localStorage.setItem('token', accessToken);
 
         // Update the Authorization header
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
         // Retry the original request
         return axiosInstance(originalRequest);

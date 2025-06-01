@@ -336,6 +336,7 @@ class Board {
         queryParams.push(sprintId);
       }
 
+      // Use string interpolation for LIMIT/OFFSET to avoid MySQL parameter issues
       const query = `
         SELECT i.*,
                assignee.first_name as assignee_first_name, assignee.last_name as assignee_last_name,
@@ -347,10 +348,8 @@ class Board {
         LEFT JOIN sprints s ON i.sprint_id = s.id
         ${whereClause}
         ORDER BY i.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
-
-      queryParams.push(limit, offset);
       const rows = await database.query(query, queryParams);
 
       return rows.map(row => ({

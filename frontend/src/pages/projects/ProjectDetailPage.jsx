@@ -64,6 +64,7 @@ const ProjectDetailPage = () => {
   }, [id]);
 
   const handleBoardCreated = (newBoard) => {
+    console.log('[ProjectDetailPage] Board created:', newBoard);
     setBoards(prev => [newBoard, ...prev]);
     setShowCreateBoardModal(false);
   };
@@ -302,7 +303,10 @@ const ProjectDetailPage = () => {
                   <Card
                     key={board.id}
                     className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                    onClick={() => navigate(`/boards/${board.id}`)}
+                    onClick={() => {
+                      console.log('[ProjectDetailPage] Navigating to board:', board.id);
+                      navigate(`/boards/${board.id}`);
+                    }}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-medium text-neutral-900">{board.name}</h3>

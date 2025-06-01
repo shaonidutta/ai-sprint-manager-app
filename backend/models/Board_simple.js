@@ -43,8 +43,8 @@ class BoardSimple {
         queryParams.push(`%${search}%`, `%${search}%`);
       }
 
-      query += ' ORDER BY is_default DESC, created_at DESC LIMIT ?';
-      queryParams.push(limitInt);
+      // Use string interpolation for LIMIT to avoid MySQL parameter issues
+      query += ` ORDER BY is_default DESC, created_at DESC LIMIT ${limitInt}`;
 
       logger.info('Executing simple boards query:', { query, queryParams });
       const rows = await database.query(query, queryParams);
