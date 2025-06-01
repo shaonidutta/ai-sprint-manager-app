@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 // Create axios instance
 const axiosInstance = axios.create({
@@ -63,11 +63,10 @@ axiosInstance.interceptors.response.use(
         }
 
         // Try to refresh the token
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+        const response = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
           refresh_token: refreshToken
         });
 
-        console.log('Refresh token response:', response.data);
         const accessToken = response.data.data?.access_token || response.data.data?.token;
         if (!accessToken) {
           throw new Error('No access token in refresh response');

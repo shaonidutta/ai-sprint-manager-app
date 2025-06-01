@@ -1,5 +1,5 @@
 import axiosInstance from '../../api/config/axiosConfig';
-import { API_ENDPOINTS } from '../../api/endpoints';
+import { API_ENDPOINTS } from '../../api/endpoints/index';
 
 export const userService = {
   // Get current user profile

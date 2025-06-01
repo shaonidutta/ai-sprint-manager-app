@@ -18,6 +18,10 @@ import ProfilePage from '../pages/profile/ProfilePage';
 import OTPVerification from '../pages/auth/OTPVerification';
 import AIFeaturesPage from '../pages/ai/AIFeaturesPage';
 import ProtectedRoute from './ProtectedRoute';
+import SprintPlanningPage from '../pages/ai/SprintPlanningPage';
+import ScopeCreepPage from '../pages/ai/ScopeCreepPage';
+import RiskAssessmentPage from '../pages/ai/RiskAssessmentPage';
+import RetrospectivePage from '../pages/ai/RetrospectivePage';
 
 export const routes = [
   {
@@ -92,8 +96,24 @@ export const routes = [
                 element: <ProfilePage />,
               },
               {
-                path: '/projects/:projectId/ai-features',
+                path: '/ai/dashboard/:projectId',
                 element: <AIFeaturesPage />,
+              },
+              {
+                path: '/ai/sprint-planning/:projectId',
+                element: <SprintPlanningPage />,
+              },
+              {
+                path: '/ai/scope-creep/:projectId',
+                element: <ScopeCreepPage />,
+              },
+              {
+                path: '/ai/risk-assessment/:projectId',
+                element: <RiskAssessmentPage />,
+              },
+              {
+                path: '/ai/retrospective/:projectId',
+                element: <RetrospectivePage />,
               },
             ]
           }

@@ -1,5 +1,5 @@
-import api from '../api/config/axiosConfig';
-import { API_ENDPOINTS } from '../api/endpoints';
+import api from '../../api/config/axiosConfig';
+import { API_ENDPOINTS } from '../../api/endpoints/index';
 
 export const boardService = {
   // Get all boards for a project

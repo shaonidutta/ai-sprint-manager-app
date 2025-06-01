@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS } from '../../api/endpoints';
+import { API_ENDPOINTS } from '../../api/endpoints/index';
 import { aiService } from '../../services/ai/aiService';
 import { aiUtils } from '../../services/ai/aiUtils';
 
@@ -270,6 +270,26 @@ const AIFeaturesPage = () => {
 
       {/* Features Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Sprint Planning Assistant */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="w-12 h-12 bg-white bg-opacity-20 text-white rounded-lg flex items-center justify-center">
+                <span className="text-2xl">📅</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-white">Sprint Planning Assistant</h3>
+                <p className="text-blue-100 text-sm">AI-powered sprint planning suggestions</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate(`/ai/sprint-planning/${projectId}`)}
+              className="w-full bg-white text-blue-600 py-2 px-4 rounded-md hover:bg-blue-50 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600"
+            >
+              Try Now
+            </button>
+          </div>
+        </div>
         {features.map((feature) => (
           <div
             key={feature.id}

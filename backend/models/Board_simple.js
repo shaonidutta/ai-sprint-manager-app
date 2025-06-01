@@ -19,9 +19,18 @@ class BoardSimple {
     try {
       const { page = 1, limit = 10, search = '' } = options;
       
-      // Ensure parameters are integers
+      // Validate and sanitize parameters
       const projectIdInt = parseInt(projectId);
       const limitInt = parseInt(limit);
+      const offset = (parseInt(page) - 1) * limitInt;
+
+      if (isNaN(projectIdInt) || projectIdInt <= 0) {
+        throw new ValidationError('Invalid project ID');
+      }
+
+      if (isNaN(limitInt) || limitInt <= 0) {
+        throw new ValidationError('Invalid limit value');
+      }
 
       // Check if user has access to project
       const accessCheck = await database.query(
@@ -34,7 +43,7 @@ class BoardSimple {
         throw new ValidationError('Access denied to project');
       }
 
-      // Use a very simple query to avoid malformed packet issues
+      // Build query with parameterized LIMIT and OFFSET
       let query = 'SELECT * FROM boards WHERE project_id = ?';
       let queryParams = [projectIdInt];
 
@@ -43,8 +52,8 @@ class BoardSimple {
         queryParams.push(`%${search}%`, `%${search}%`);
       }
 
-      // Use string interpolation for LIMIT to avoid MySQL parameter issues
-      query += ` ORDER BY is_default DESC, created_at DESC LIMIT ${limitInt}`;
+      query += ' ORDER BY is_default DESC, created_at DESC LIMIT ? OFFSET ?';
+      queryParams.push(limitInt, offset);
 
       logger.info('Executing simple boards query:', { query, queryParams });
       const rows = await database.query(query, queryParams);

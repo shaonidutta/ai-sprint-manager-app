@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_ENDPOINTS } from '../endpoints';
+import { API_ENDPOINTS } from '../endpoints/index';
 
 export const setupAuthInterceptor = (axiosInstance) => {
   axiosInstance.interceptors.request.use(

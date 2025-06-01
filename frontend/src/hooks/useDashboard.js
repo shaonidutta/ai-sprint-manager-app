@@ -17,7 +17,6 @@ export const useDashboard = () => {
   
   const [projects, setProjects] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
-  const [aiInsights, setAiInsights] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch dashboard statistics
@@ -45,7 +44,8 @@ export const useDashboard = () => {
         sort_by: 'updated_at',
         sort_order: 'desc'
       });
-      setProjects(response.data.data.projects || []);
+      const projectsData = response.data?.data?.projects || response.data?.projects || response.data || [];
+      setProjects(Array.isArray(projectsData) ? projectsData : []);
     } catch (err) {
       console.error('Failed to fetch projects:', err);
       setProjects([]);
@@ -63,31 +63,6 @@ export const useDashboard = () => {
     }
   };
 
-  // Fetch AI insights
-  const fetchAIInsights = async () => {
-    try {
-      const response = await api.dashboard.getAIInsights();
-      setAiInsights(response.data.data || []);
-    } catch (err) {
-      console.error('Failed to fetch AI insights:', err);
-      // Use fallback insights if API fails
-      setAiInsights([
-        {
-          type: 'suggestion',
-          title: 'Sprint Planning Suggestion',
-          message: 'Consider breaking down large tasks into smaller, manageable pieces for better velocity tracking.',
-          priority: 'medium'
-        },
-        {
-          type: 'alert',
-          title: 'Performance Update',
-          message: 'Your team velocity has been consistent. Great work maintaining steady progress!',
-          priority: 'low'
-        }
-      ]);
-    }
-  };
-
   // Load all dashboard data
   const loadDashboardData = async () => {
     setLoading(true);
@@ -97,8 +72,7 @@ export const useDashboard = () => {
       await Promise.all([
         fetchStats(),
         fetchProjects(),
-        fetchActivity(),
-        fetchAIInsights()
+        fetchActivity()
       ]);
     } catch (err) {
       setError('Failed to load dashboard data');
@@ -140,7 +114,6 @@ export const useDashboard = () => {
     stats,
     projects,
     recentActivity,
-    aiInsights,
     user,
     
     // Loading states
@@ -155,7 +128,6 @@ export const useDashboard = () => {
     // Individual fetch functions for manual refresh
     fetchStats,
     fetchProjects,
-    fetchActivity,
-    fetchAIInsights
+    fetchActivity
   };
 };

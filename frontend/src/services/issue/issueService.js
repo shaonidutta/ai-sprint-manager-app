@@ -1,5 +1,5 @@
 import api from '../../api/config/axiosConfig';
-import { API_ENDPOINTS } from '../api/endpoints';
+import { API_ENDPOINTS } from '../../api/endpoints/index';
 
 export const issueService = {
   // Get issues for a board
@@ -21,8 +21,8 @@ export const issueService = {
   },
 
   // Get issue by ID
-  getById: async (issueId) => {
-    const response = await api.get(API_ENDPOINTS.ISSUES.DETAIL(issueId));
+  getById: async (id) => {
+    const response = await api.get(API_ENDPOINTS.ISSUES.DETAIL(id));
     return response.data;
   },
 
@@ -33,8 +33,8 @@ export const issueService = {
   },
 
   // Update issue
-  update: async (issueId, data) => {
-    const response = await api.put(API_ENDPOINTS.ISSUES.UPDATE(issueId), data);
+  update: async (id, data) => {
+    const response = await api.put(API_ENDPOINTS.ISSUES.UPDATE(id), data);
     return response.data;
   },
 
@@ -49,61 +49,47 @@ export const issueService = {
   },
 
   // Delete issue
-  delete: async (issueId) => {
-    const response = await api.delete(API_ENDPOINTS.ISSUES.DELETE(issueId));
+  delete: async (id) => {
+    const response = await api.delete(API_ENDPOINTS.ISSUES.DELETE(id));
     return response.data;
   },
 
   // Comment operations
   comments: {
-    // Get issue comments
-    getByIssue: async (issueId, params = {}) => {
-      const response = await api.get(API_ENDPOINTS.ISSUES.COMMENTS.LIST(issueId), { params });
+    getAll: async (issueId) => {
+      const response = await api.get(API_ENDPOINTS.ISSUES.COMMENTS.LIST(issueId));
       return response.data;
     },
-
-    // Create comment
-    create: async (issueId, content) => {
-      const response = await api.post(API_ENDPOINTS.ISSUES.COMMENTS.CREATE(issueId), { content });
+    create: async (issueId, data) => {
+      const response = await api.post(API_ENDPOINTS.ISSUES.COMMENTS.CREATE(issueId), data);
       return response.data;
     },
-
-    // Update comment
-    update: async (commentId, content) => {
-      const response = await api.put(API_ENDPOINTS.ISSUES.COMMENTS.UPDATE(commentId), { content });
+    update: async (id, data) => {
+      const response = await api.put(API_ENDPOINTS.ISSUES.COMMENTS.UPDATE(id), data);
       return response.data;
     },
-
-    // Delete comment
-    delete: async (commentId) => {
-      const response = await api.delete(API_ENDPOINTS.ISSUES.COMMENTS.DELETE(commentId));
+    delete: async (id) => {
+      const response = await api.delete(API_ENDPOINTS.ISSUES.COMMENTS.DELETE(id));
       return response.data;
     }
   },
 
   // Time log operations
   timeLogs: {
-    // Get issue time logs
-    getByIssue: async (issueId, params = {}) => {
-      const response = await api.get(API_ENDPOINTS.ISSUES.TIME_LOGS.LIST(issueId), { params });
+    getAll: async (issueId) => {
+      const response = await api.get(API_ENDPOINTS.ISSUES.TIME_LOGS.LIST(issueId));
       return response.data;
     },
-
-    // Log time
     create: async (issueId, data) => {
       const response = await api.post(API_ENDPOINTS.ISSUES.TIME_LOGS.CREATE(issueId), data);
       return response.data;
     },
-
-    // Update time log
-    update: async (timeLogId, data) => {
-      const response = await api.put(API_ENDPOINTS.ISSUES.TIME_LOGS.UPDATE(timeLogId), data);
+    update: async (id, data) => {
+      const response = await api.put(API_ENDPOINTS.ISSUES.TIME_LOGS.UPDATE(id), data);
       return response.data;
     },
-
-    // Delete time log
-    delete: async (timeLogId) => {
-      const response = await api.delete(API_ENDPOINTS.ISSUES.TIME_LOGS.DELETE(timeLogId));
+    delete: async (id) => {
+      const response = await api.delete(API_ENDPOINTS.ISSUES.TIME_LOGS.DELETE(id));
       return response.data;
     }
   }

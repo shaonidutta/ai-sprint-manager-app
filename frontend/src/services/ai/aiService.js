@@ -1,85 +1,34 @@
-import axiosInstance from '../../api/config/axiosConfig';
-import { API_ENDPOINTS } from '../../api/endpoints';
+import api from '../../api/config/axiosConfig';
+import { API_ENDPOINTS } from '../../api/endpoints/index';
 
-class AIService {
-  validateProjectId(projectId) {
-    if (!projectId) {
-      throw new Error('Project ID is required');
-    }
+export const aiService = {
+  // Get AI quota for a project
+  getQuota: async (projectId) => {
+    const response = await api.get(API_ENDPOINTS.AI.QUOTA(projectId));
+    return response.data;
+  },
+
+  // Get sprint planning insights
+  getSprintPlanningInsights: async (projectId, data) => {
+    const response = await api.post(API_ENDPOINTS.AI.SPRINT_PLANNING(projectId), data);
+    return response.data;
+  },
+
+  // Get scope creep analysis
+  getScopeCreepAnalysis: async (projectId, data) => {
+    const response = await api.post(API_ENDPOINTS.AI.SCOPE_CREEP(projectId), data);
+    return response.data;
+  },
+
+  // Get risk assessment
+  getRiskAssessment: async (projectId, data) => {
+    const response = await api.post(API_ENDPOINTS.AI.RISK_ASSESSMENT(projectId), data);
+    return response.data;
+  },
+
+  // Get retrospective insights
+  getRetrospectiveInsights: async (projectId, data) => {
+    const response = await api.post(API_ENDPOINTS.AI.RETROSPECTIVE(projectId), data);
+    return response.data;
   }
-
-  async getSprintPlanningInsights(projectId) {
-    this.validateProjectId(projectId);
-    try {
-      const response = await axiosInstance.get(API_ENDPOINTS.AI.SPRINT_PLANNING(projectId));
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async getScopeCreepAnalysis(projectId) {
-    this.validateProjectId(projectId);
-    try {
-      const response = await axiosInstance.get(API_ENDPOINTS.AI.SCOPE_CREEP(projectId));
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async getRiskAssessment(projectId) {
-    this.validateProjectId(projectId);
-    try {
-      const response = await axiosInstance.get(API_ENDPOINTS.AI.RISK_ASSESSMENT(projectId));
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async getRetrospectiveInsights(projectId) {
-    this.validateProjectId(projectId);
-    try {
-      const response = await axiosInstance.get(API_ENDPOINTS.AI.RETROSPECTIVE(projectId));
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async getAIQuota(projectId) {
-    this.validateProjectId(projectId);
-    try {
-      const response = await axiosInstance.get(API_ENDPOINTS.AI.QUOTA(projectId));
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  async getDashboardInsights() {
-    try {
-      const response = await axiosInstance.get(API_ENDPOINTS.DASHBOARD.AI_INSIGHTS);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  handleError(error) {
-    if (error.response) {
-      // Server responded with an error
-      const errorData = error.response.data;
-      return new Error(errorData.error?.message || 'Server error occurred');
-    } else if (error.request) {
-      // Request was made but no response received
-      return new Error('No response received from server');
-    } else {
-      // Error in request setup
-      return error;
-    }
-  }
-}
-
-export const aiService = new AIService();
+};

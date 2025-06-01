@@ -1,7 +1,7 @@
 import axiosInstance from './config/axiosConfig';
 import { setupAuthInterceptor } from './interceptors/authInterceptor';
 import { setupErrorInterceptor } from './interceptors/errorInterceptor';
-import { API_ENDPOINTS } from './endpoints';
+import { API_ENDPOINTS } from './endpoints/index';
 
 // Setup interceptors
 setupAuthInterceptor(axiosInstance);
@@ -25,11 +25,11 @@ export const api = {
   },
 
   projects: {
-    getAll: (params) => axiosInstance.get(API_ENDPOINTS.PROJECTS.BASE, { params }),
+    getAll: (params) => axiosInstance.get(API_ENDPOINTS.PROJECTS.LIST, { params }),
     getById: (id) => axiosInstance.get(API_ENDPOINTS.PROJECTS.DETAIL(id)),
-    create: (data) => axiosInstance.post(API_ENDPOINTS.PROJECTS.BASE, data),
-    update: (id, data) => axiosInstance.put(API_ENDPOINTS.PROJECTS.DETAIL(id), data),
-    delete: (id) => axiosInstance.delete(API_ENDPOINTS.PROJECTS.DETAIL(id)),
+    create: (data) => axiosInstance.post(API_ENDPOINTS.PROJECTS.CREATE, data),
+    update: (id, data) => axiosInstance.put(API_ENDPOINTS.PROJECTS.UPDATE(id), data),
+    delete: (id) => axiosInstance.delete(API_ENDPOINTS.PROJECTS.DELETE(id)),
 
     // Team member management methods
     getTeamMembers: (projectId) => axiosInstance.get(API_ENDPOINTS.PROJECTS.MEMBERS.LIST(projectId)),

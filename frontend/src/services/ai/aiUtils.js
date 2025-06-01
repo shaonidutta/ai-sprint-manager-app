@@ -177,16 +177,12 @@ export const aiUtils = {
 
   // Get risk level color
   getRiskLevelColor: (level) => {
-    switch (level.toLowerCase()) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    const colors = {
+      Low: 'bg-green-100 text-green-800',
+      Medium: 'bg-yellow-100 text-yellow-800',
+      High: 'bg-red-100 text-red-800'
+    };
+    return colors[level] || colors.Medium;
   },
 
   // Get team morale color
@@ -252,43 +248,58 @@ export const aiUtils = {
     };
   },
 
+  // Format sprint planning data
   formatSprintPlanningData: (data) => {
+    const { suggestions } = data;
     return {
-      suggestedStoryPoints: data.suggestedStoryPoints,
-      suggestedDuration: data.suggestedDuration,
-      recommendedIssues: data.recommendedIssues || [],
-      teamCapacity: data.teamCapacity,
-      historicalVelocity: data.historicalVelocity,
+      suggestedStoryPoints: suggestions.totalStoryPoints,
+      suggestedDuration: 14, // Default 2-week sprint
+      recommendedIssues: suggestions.recommendedIssues.map(issue => ({
+        id: issue.issueId,
+        title: issue.title,
+        storyPoints: issue.storyPoints,
+        priority: issue.priority,
+        reasoning: issue.reasoning
+      })),
+      risks: suggestions.risks || [],
+      alternatives: suggestions.alternatives || []
     };
   },
 
+  // Format scope creep data
   formatScopeCreepData: (data) => {
     return {
-      riskLevel: data.riskLevel,
-      riskScore: data.riskScore,
-      detectedPatterns: data.detectedPatterns || [],
-      recommendations: data.recommendations || [],
-      historicalTrend: data.historicalTrend || [],
+      riskLevel: data.scopeIncreased ? 'High' : 'Low',
+      riskScore: data.percentageIncrease || 0,
+      detectedPatterns: data.addedIssues.map(issue => 
+        `Added: ${issue.title} (${issue.storyPoints} points) on ${new Date(issue.addedDate).toLocaleDateString()}`
+      ),
+      recommendations: data.recommendations || []
     };
   },
 
+  // Format risk assessment data
   formatRiskAssessmentData: (data) => {
     return {
       overallRisk: data.overallRisk,
-      riskFactors: data.riskFactors || [],
-      mitigationStrategies: data.mitigationStrategies || [],
-      timeline: data.timeline,
-      confidence: data.confidence,
+      confidence: Math.round((1 - data.risks.length / 10) * 100), // Simple confidence calculation
+      riskFactors: data.risks.map(risk => `${risk.category}: ${risk.description}`),
+      mitigationStrategies: data.risks.map(risk => risk.mitigation)
     };
   },
 
+  // Format retrospective data
   formatRetrospectiveData: (data) => {
     return {
-      sprintPerformance: data.sprintPerformance,
-      teamCollaboration: data.teamCollaboration,
-      improvements: data.improvements || [],
-      successes: data.successes || [],
-      challenges: data.challenges || [],
+      sprintPerformance: Math.round((data.sprintSummary.completedStoryPoints / data.sprintSummary.plannedStoryPoints) * 100),
+      teamCollaboration: 85, // Example static value, should be calculated based on actual metrics
+      successes: data.insights
+        .filter(insight => insight.category === 'Success')
+        .map(insight => insight.insight),
+      challenges: data.insights
+        .filter(insight => insight.category === 'Challenge')
+        .map(insight => insight.insight),
+      improvements: data.improvements.map(imp => imp.suggestion)
     };
   },
 };

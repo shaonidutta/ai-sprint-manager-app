@@ -3,11 +3,12 @@ export const API_ENDPOINTS = {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
-    REFRESH_TOKEN: '/auth/refresh',
+    REFRESH: '/auth/refresh',
     VERIFY_EMAIL: '/auth/verify-email',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
     ME: '/auth/me',
+    UPDATE_PROFILE: '/auth/profile'
   },
   USERS: {
     PROFILE: '/auth/me',
@@ -15,29 +16,36 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: '/auth/change-password',
   },
   PROJECTS: {
-    BASE: '/projects',
+    LIST: '/projects',
+    CREATE: '/projects',
     DETAIL: (id) => `/projects/${id}`,
+    UPDATE: (id) => `/projects/${id}`,
+    DELETE: (id) => `/projects/${id}`,
     MEMBERS: {
-      LIST: (id) => `/projects/${id}/team`,
-      ADD: (id) => `/projects/${id}/team`,
-      UPDATE: (projectId, userId) => `/projects/${projectId}/team/${userId}`,
-      REMOVE: (projectId, userId) => `/projects/${projectId}/team/${userId}`,
-    },
+      LIST: (id) => `/projects/${id}/members`,
+      ADD: (id) => `/projects/${id}/members`,
+      UPDATE: (id, userId) => `/projects/${id}/members/${userId}`,
+      REMOVE: (id, userId) => `/projects/${id}/members/${userId}`
+    }
   },
   BOARDS: {
     LIST: (projectId) => `/projects/${projectId}/boards`,
-    DETAIL: (id) => `/boards/${id}`,
     CREATE: (projectId) => `/projects/${projectId}/boards`,
+    DETAIL: (id) => `/boards/${id}`,
     UPDATE: (id) => `/boards/${id}`,
-    DELETE: (id) => `/boards/${id}`,
+    DELETE: (id) => `/boards/${id}`
   },
   SPRINTS: {
     LIST: (boardId) => `/boards/${boardId}/sprints`,
     CREATE: (boardId) => `/boards/${boardId}/sprints`,
+    DETAIL: (id) => `/sprints/${id}`,
+    UPDATE: (id) => `/sprints/${id}`,
+    DELETE: (id) => `/sprints/${id}`,
     START: (id) => `/sprints/${id}/start`,
     COMPLETE: (id) => `/sprints/${id}/complete`,
+    BURNDOWN: (id) => `/sprints/${id}/burndown`,
     ADD_ISSUES: (id) => `/sprints/${id}/issues`,
-    REMOVE_ISSUE: (sprintId, issueId) => `/sprints/${sprintId}/issues/${issueId}`,
+    REMOVE_ISSUE: (id, issueId) => `/sprints/${id}/issues/${issueId}`
   },
   ISSUES: {
     LIST: (boardId) => `/boards/${boardId}/issues`,
@@ -51,25 +59,25 @@ export const API_ENDPOINTS = {
       LIST: (issueId) => `/issues/${issueId}/comments`,
       CREATE: (issueId) => `/issues/${issueId}/comments`,
       UPDATE: (id) => `/comments/${id}`,
-      DELETE: (id) => `/comments/${id}`,
+      DELETE: (id) => `/comments/${id}`
     },
     TIME_LOGS: {
       LIST: (issueId) => `/issues/${issueId}/time-logs`,
       CREATE: (issueId) => `/issues/${issueId}/time-logs`,
       UPDATE: (id) => `/time-logs/${id}`,
-      DELETE: (id) => `/time-logs/${id}`,
-    },
+      DELETE: (id) => `/time-logs/${id}`
+    }
   },
   AI: {
     SPRINT_PLANNING: (projectId) => `/ai/projects/${projectId}/sprint-plan`,
     SCOPE_CREEP: (projectId) => `/ai/projects/${projectId}/scope-creep`,
     RISK_ASSESSMENT: (projectId) => `/ai/projects/${projectId}/risk-assessment`,
     RETROSPECTIVE: (projectId) => `/ai/projects/${projectId}/retrospective`,
-    QUOTA: (projectId) => `/ai/projects/${projectId}/quota`,
+    QUOTA: (projectId) => `/ai/projects/${projectId}/quota`
   },
   DASHBOARD: {
     STATS: '/dashboard/stats',
     ACTIVITY: '/dashboard/activity',
-    AI_INSIGHTS: '/dashboard/ai-insights',
-  },
+    AI_INSIGHTS: '/dashboard/ai-insights'
+  }
 };

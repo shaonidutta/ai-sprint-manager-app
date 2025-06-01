@@ -1,5 +1,5 @@
 import api from '../../api/config/axiosConfig';
-import { API_ENDPOINTS } from '../api/endpoints';
+import { API_ENDPOINTS } from '../../api/endpoints/index';
 
 export const sprintService = {
   // Get sprints for a board

@@ -29,10 +29,11 @@ export const ROUTES = {
   SPRINT_RETROSPECTIVE: '/sprints/:sprintId/retro',
 
   // AI Features Routes
-  AI_FEATURES: (projectId) => `/projects/${projectId}/ai-features`,
-  AI_SPRINT_PLANNING: (projectId) => `/projects/${projectId}/ai-features/sprint-planning`,
-  AI_RISK_ASSESSMENT: (projectId) => `/projects/${projectId}/ai-features/risk-assessment`,
-  AI_INSIGHTS: (projectId) => `/projects/${projectId}/ai-features/insights`,
+  AI_DASHBOARD: (projectId) => `/ai/dashboard/${projectId}`,
+  AI_SPRINT_PLANNING: (projectId) => `/ai/sprint-planning/${projectId}`,
+  AI_SCOPE_CREEP: (projectId) => `/ai/scope-creep/${projectId}`,
+  AI_RISK_ASSESSMENT: (projectId) => `/ai/risk-assessment/${projectId}`,
+  AI_RETROSPECTIVE: (projectId) => `/ai/retrospective/${projectId}`,
 };
 
 // Helper function to replace route parameters
@@ -68,8 +69,9 @@ export const PROTECTED_ROUTES = [
   ROUTES.SPRINT_DETAILS,
   ROUTES.SPRINT_PLANNING,
   ROUTES.SPRINT_RETROSPECTIVE,
-  ROUTES.AI_FEATURES,
+  ROUTES.AI_DASHBOARD,
   ROUTES.AI_SPRINT_PLANNING,
+  ROUTES.AI_SCOPE_CREEP,
   ROUTES.AI_RISK_ASSESSMENT,
-  ROUTES.AI_INSIGHTS,
+  ROUTES.AI_RETROSPECTIVE,
 ]; 
