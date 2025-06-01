@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { 
+import {
   SearchIcon, BellIcon, QuestionIcon,
   CreateIcon, MenuIcon
 } from '../common/Icons/index.jsx';
 import CreateProjectModal from '../dashboard/CreateProjectModal';
+import { CreateBoardModal } from '../boards';
+import { CreateIssueModal } from '../issues';
 import { api } from '../../api';
 
 const Header = ({ onMenuClick, isMobile }) => {
@@ -14,7 +16,42 @@ const Header = ({ onMenuClick, isMobile }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
+  const [showCreateIssueModal, setShowCreateIssueModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
+
+  // Refs for click outside detection
+  const createMenuRef = useRef(null);
+  const userMenuRef = useRef(null);
+
+  // Click outside detection
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (createMenuRef.current && !createMenuRef.current.contains(event.target)) {
+        setIsCreateMenuOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        setIsCreateMenuOpen(false);
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isCreateMenuOpen || isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscapeKey);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isCreateMenuOpen, isUserMenuOpen]);
 
   const handleLogout = async () => {
     try {
@@ -42,6 +79,18 @@ const Header = ({ onMenuClick, isMobile }) => {
     }
   };
 
+  const handleCreateBoard = (boardData) => {
+    // Board creation will be handled by the modal
+    setShowCreateBoardModal(false);
+    // Optionally navigate to the new board or refresh the current page
+  };
+
+  const handleCreateIssue = (issueData) => {
+    // Issue creation will be handled by the modal
+    setShowCreateIssueModal(false);
+    // Optionally refresh the current page or update the issue list
+  };
+
   const userMenuItems = [
     { label: 'Profile', path: '/profile', action: null },
     { label: 'Account settings', path: '/settings/account', action: null },
@@ -49,112 +98,116 @@ const Header = ({ onMenuClick, isMobile }) => {
   ];
 
   const createMenuItems = [
-    { 
-      label: 'Create project', 
+    {
+      label: 'Create project',
       action: () => {
         setIsCreateMenuOpen(false);
         setShowCreateProjectModal(true);
       }
     },
-    { label: 'Create board', path: '/boards/new' },
-    { label: 'Create issue', path: '/issues/new' },
+    {
+      label: 'Create board',
+      action: () => {
+        setIsCreateMenuOpen(false);
+        setShowCreateBoardModal(true);
+      }
+    },
+    {
+      label: 'Create issue',
+      action: () => {
+        setIsCreateMenuOpen(false);
+        setShowCreateIssueModal(true);
+      }
+    },
   ];
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="px-4 sm:px-6 lg:px-8">
+    <header className="bg-white border-b border-gray-200 shadow-sm z-50 relative">
+      <div className="px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Left section with menu button */}
-          <div className="flex items-center">
+          <div className="flex items-center min-w-0">
             {isMobile && (
               <button
                 onClick={onMenuClick}
-                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                className="p-2 mr-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-150"
+                aria-label="Open sidebar"
               >
                 <span className="sr-only">Open sidebar</span>
                 <MenuIcon className="h-6 w-6" />
               </button>
             )}
-          </div>
-
-          {/* Center section */}
-          <div className="flex-1 flex items-center justify-center sm:justify-start">
-            <div className="flex-shrink-0 font-semibold text-lg text-gray-900">
-              Sprint Manager
+            {/* Logo/Title */}
+            <div className="flex-shrink-0 font-semibold text-lg text-gray-900 truncate">
+              <span className="hidden sm:inline">Sprint Manager</span>
+              <span className="sm:hidden">Sprint</span>
             </div>
           </div>
 
           {/* Right section - Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
             {/* Create button */}
-            <div className="relative">
+            <div className="relative" ref={createMenuRef}>
               <button
                 onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
-                className="flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+                className="flex items-center px-2 sm:px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-150 shadow-sm min-w-0"
+                aria-expanded={isCreateMenuOpen}
+                aria-haspopup="true"
               >
-                <CreateIcon className="h-4 w-4 mr-2" />
-                Create
+                <CreateIcon className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Create</span>
               </button>
 
               {/* Create dropdown menu */}
               {isCreateMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                   {createMenuItems.map((item) => (
-                    item.path ? (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsCreateMenuOpen(false)}
-                      >
-                        {item.label}
-                      </Link>
-                    ) : (
-                      <button
-                        key={item.label}
-                        onClick={item.action}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        {item.label}
-                      </button>
-                    )
+                    <button
+                      key={item.label}
+                      onClick={item.action}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
+                    >
+                      {item.label}
+                    </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Help */}
-            <button className="p-2 text-gray-400 hover:text-gray-500">
+            {/* Help - Hidden on small screens */}
+            <button className="hidden sm:flex p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md transition-colors duration-150">
               <QuestionIcon className="h-5 w-5" />
             </button>
 
             {/* Notifications */}
-            <button className="p-2 text-gray-400 hover:text-gray-500">
+            <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md transition-colors duration-150 relative">
               <BellIcon className="h-5 w-5" />
+              {/* Notification badge */}
+              <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
             </button>
 
             {/* User menu */}
-            <div className="relative">
+            <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center"
+                className="flex items-center p-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-full"
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="true"
               >
-                <img
-                  src="https://via.placeholder.com/32"
-                  alt="User avatar"
-                  className="h-8 w-8 rounded-full"
-                />
+                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-blue-600 flex items-center justify-center text-sm font-medium text-white hover:bg-blue-700 transition-colors duration-150 shadow-sm">
+                  {user?.first_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                </div>
               </button>
 
               {/* User dropdown menu */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                   {userMenuItems.map((item, index) => (
                     item.path ? (
                       <Link
                         key={item.path}
                         to={item.path}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
                         {item.label}
@@ -166,7 +219,7 @@ const Header = ({ onMenuClick, isMobile }) => {
                           setIsUserMenuOpen(false);
                           item.action();
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150"
                       >
                         {item.label}
                       </button>
@@ -185,6 +238,22 @@ const Header = ({ onMenuClick, isMobile }) => {
         onClose={() => setShowCreateProjectModal(false)}
         onSubmit={handleCreateProject}
         loading={createLoading}
+      />
+
+      {/* Create Board Modal */}
+      <CreateBoardModal
+        isOpen={showCreateBoardModal}
+        onClose={() => setShowCreateBoardModal(false)}
+        projectId={null} // Will need to be passed from context or current project
+        onBoardCreated={handleCreateBoard}
+      />
+
+      {/* Create Issue Modal */}
+      <CreateIssueModal
+        isOpen={showCreateIssueModal}
+        onClose={() => setShowCreateIssueModal(false)}
+        boardId={null} // Will need to be passed from context or current board
+        onIssueCreated={handleCreateIssue}
       />
     </header>
   );
