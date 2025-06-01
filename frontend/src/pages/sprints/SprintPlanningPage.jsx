@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import {
+  DndContext,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { Card, Button, Input, TextArea } from '../../components/common';
 import { CreateIssueModal } from '../../components/issues';
 import { api } from '../../api';
@@ -25,6 +38,14 @@ const SprintPlanningPage = () => {
   const [error, setError] = useState(null);
   const [showCreateIssueModal, setShowCreateIssueModal] = useState(false);
   const [board, setBoard] = useState(null);
+  const [activeId, setActiveId] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Redirect if no boardId provided
   useEffect(() => {
@@ -49,10 +70,7 @@ const SprintPlanningPage = () => {
   const fetchBacklogIssues = async () => {
     try {
       setLoading(true);
-      const response = await api.issues.getByBoard(boardId, { 
-        sprintId: 'null',  // Get unassigned issues
-        limit: 100 
-      });
+      const response = await api.issues.getBacklog(boardId);
       setBacklogIssues(response.data.data.issues || []);
     } catch (err) {
       console.error('Failed to fetch backlog issues:', err);
@@ -60,6 +78,30 @@ const SprintPlanningPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDragStart = (event) => {
+    const { active } = event;
+    setActiveId(active.id);
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    
+    if (!over) return;
+
+    if (active.id !== over.id) {
+      const oldIndex = backlogIssues.findIndex(issue => issue.id === active.id);
+      const newIndex = backlogIssues.findIndex(issue => issue.id === over.id);
+      
+      setBacklogIssues(arrayMove(backlogIssues, oldIndex, newIndex));
+    }
+    
+    setActiveId(null);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
   };
 
   const handleSprintFormChange = (e) => {
@@ -116,56 +158,6 @@ const SprintPlanningPage = () => {
     } catch (err) {
       console.error('Failed to start sprint:', err);
       setError(err.response?.data?.message || 'Failed to start sprint');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDragEnd = async (result) => {
-    const { destination, source, draggableId } = result;
-
-    if (!destination) return;
-
-    const sourceDroppableId = source.droppableId;
-    const destinationDroppableId = destination.droppableId;
-
-    // If dropped in the same location, do nothing
-    if (sourceDroppableId === destinationDroppableId && source.index === destination.index) {
-      return;
-    }
-
-    const issueId = parseInt(draggableId);
-    const issue = [...backlogIssues, ...sprintIssues].find(i => i.id === issueId);
-
-    if (!issue) return;
-
-    try {
-      setLoading(true);
-      
-      if (destinationDroppableId === 'sprint' && sourceDroppableId === 'backlog') {
-        // Moving from backlog to sprint
-        if (!sprint) {
-          setError('Please create a sprint first');
-          return;
-        }
-
-        await api.issues.update(issueId, { sprintId: sprint.id });
-        
-        // Update local state
-        setBacklogIssues(prev => prev.filter(i => i.id !== issueId));
-        setSprintIssues(prev => [...prev, { ...issue, sprint_id: sprint.id }]);
-        
-      } else if (destinationDroppableId === 'backlog' && sourceDroppableId === 'sprint') {
-        // Moving from sprint to backlog
-        await api.issues.update(issueId, { sprintId: null });
-        
-        // Update local state
-        setSprintIssues(prev => prev.filter(i => i.id !== issueId));
-        setBacklogIssues(prev => [...prev, { ...issue, sprint_id: null }]);
-      }
-    } catch (err) {
-      console.error('Failed to move issue:', err);
-      setError('Failed to move issue');
     } finally {
       setLoading(false);
     }
@@ -358,24 +350,41 @@ const SprintPlanningPage = () => {
                         </Button>
                       </div>
                     ) : (
-                      backlogIssues.map((issue, index) => (
-                        <Draggable key={issue.id} draggableId={issue.id.toString()} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`p-4 bg-white rounded-lg border shadow-sm transition-all duration-200 ${
-                                snapshot.isDragging
-                                  ? 'shadow-lg rotate-2 scale-105'
-                                  : 'hover:shadow-md'
-                              }`}
-                            >
-                              <IssueCard issue={issue} />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCorners}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        onDragCancel={handleDragCancel}
+                      >
+                        <SortableContext
+                          items={backlogIssues.map(issue => issue.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-2">
+                            {backlogIssues.map((issue) => (
+                              <div
+                                key={issue.id}
+                                className="p-4 bg-white border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h3 className="font-medium">{issue.title}</h3>
+                                    <p className="text-sm text-gray-600">
+                                      {issue.issue_key} • {issue.status}
+                                    </p>
+                                  </div>
+                                  {issue.story_points && (
+                                    <span className="px-2 py-1 bg-gray-100 rounded text-sm">
+                                      {issue.story_points} SP
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
                     )}
                     {provided.placeholder}
                   </div>

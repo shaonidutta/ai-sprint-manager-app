@@ -1,180 +1,126 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { IssueCard } from './';
+import React, { useState } from "react";
+import PropTypes from "prop-types";
+import {
+  DndContext,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { IssueCard } from "./";
 
 const COLUMN_COLORS = {
-  'To Do': 'bg-gray-50',
-  'In Progress': 'bg-blue-50',
-  'Done': 'bg-green-50',
-  'Blocked': 'bg-red-50',
+  TODO: "bg-neutral-100",
+  IN_PROGRESS: "bg-blue-50",
+  IN_REVIEW: "bg-yellow-50",
+  DONE: "bg-green-50",
 };
 
-const Board = ({ issues, onIssueClick, onIssueMove, isLoading, error }) => {
-  const [columns] = useState([
-    { id: 'todo', title: 'To Do' },
-    { id: 'in-progress', title: 'In Progress' },
-    { id: 'done', title: 'Done' },
-    { id: 'blocked', title: 'Blocked' },
-  ]);
+const COLUMN_TITLES = {
+  TODO: "To Do",
+  IN_PROGRESS: "In Progress",
+  IN_REVIEW: "In Review",
+  DONE: "Done",
+};
 
-  const getIssuesByStatus = () => {
-    const issuesByStatus = {
-      'To Do': [],
-      'In Progress': [],
-      'Done': [],
-      'Blocked': [],
-    };
+const Board = ({ issues, onIssueMove }) => {
+  const [activeId, setActiveId] = useState(null);
 
-    issues.forEach(issue => {
-      if (issuesByStatus[issue.status]) {
-        issuesByStatus[issue.status].push(issue);
-      }
-    });
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-    return issuesByStatus;
+  const handleDragStart = (event) => {
+    const { active } = event;
+    setActiveId(active.id);
   };
 
-  const handleDragEnd = (result) => {
-    const { source, destination, draggableId } = result;
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    
+    if (!over) return;
 
-    // Dropped outside a valid droppable
-    if (!destination) return;
+    const activeIssue = issues.find(issue => issue.id === active.id);
+    const overIssue = issues.find(issue => issue.id === over.id);
 
-    // No movement
-    if (
-      source.droppableId === destination.droppableId &&
-      source.index === destination.index
-    ) {
-      return;
+    if (activeIssue && overIssue && activeIssue.status !== overIssue.status) {
+      onIssueMove(activeIssue.id, overIssue.status);
     }
-
-    const sourceStatus = columns.find(col => col.id === source.droppableId)?.title;
-    const destinationStatus = columns.find(col => col.id === destination.droppableId)?.title;
-    const issue = issues.find(i => i.id === draggableId);
-
-    if (issue && sourceStatus && destinationStatus) {
-      onIssueMove(issue, sourceStatus, destinationStatus);
-    }
+    
+    setActiveId(null);
   };
 
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-4 gap-4">
-        {columns.map((column) => (
-          <div
-            key={column.id}
-            className={`
-              p-4 rounded-lg ${COLUMN_COLORS[column.title]}
-              flex flex-col h-full min-h-[500px]
-            `}
-          >
-            <h3 className="font-medium text-gray-900 mb-4">{column.title}</h3>
-            <div className="space-y-3">
-              {[1, 2, 3].map((n) => (
-                <div key={n} className="animate-pulse">
-                  <div className="bg-white rounded-lg p-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
 
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-        <p>{error}</p>
-      </div>
-    );
-  }
-
-  const issuesByStatus = getIssuesByStatus();
+  // Group issues by status
+  const issuesByStatus = issues.reduce((acc, issue) => {
+    if (!acc[issue.status]) {
+      acc[issue.status] = [];
+    }
+    acc[issue.status].push(issue);
+    return acc;
+  }, {});
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-4 gap-4">
-        {columns.map((column) => (
-          <Droppable key={column.id} droppableId={column.id}>
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={`
-                  p-4 rounded-lg ${COLUMN_COLORS[column.title]}
-                  flex flex-col h-full min-h-[500px]
-                  ${snapshot.isDraggingOver ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}
-                `}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-medium text-gray-900">
-                    {column.title}
-                  </h3>
-                  <span className="text-sm text-gray-500">
-                    {issuesByStatus[column.title].length}
-                  </span>
-                </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+      {Object.keys(COLUMN_TITLES).map((status) => (
+        <div
+          key={status}
+          className={`rounded-lg p-4 ${COLUMN_COLORS[status]} min-h-[200px]`}
+        >
+          <h3 className="font-semibold mb-4 text-neutral-700">
+            {COLUMN_TITLES[status]} ({issuesByStatus[status]?.length || 0})
+          </h3>
 
-                <div className="flex-1 space-y-3">
-                  {issuesByStatus[column.title].map((issue, index) => (
-                    <Draggable
-                      key={issue.id}
-                      draggableId={issue.id}
-                      index={index}
-                    >
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`
-                            ${snapshot.isDragging ? 'shadow-lg' : ''}
-                          `}
-                        >
-                          <IssueCard
-                            issue={issue}
-                            onClick={() => onIssueClick(issue)}
-                            view="board"
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <SortableContext
+              items={(issuesByStatus[status] || []).map(issue => issue.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {(issuesByStatus[status] || []).map((issue) => (
+                  <IssueCard
+                    key={issue.id}
+                    issue={issue}
+                    isDragging={activeId === issue.id}
+                  />
+                ))}
               </div>
-            )}
-          </Droppable>
-        ))}
-      </div>
-    </DragDropContext>
+            </SortableContext>
+          </DndContext>
+        </div>
+      ))}
+    </div>
   );
 };
 
 Board.propTypes = {
-  issues: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    key: PropTypes.string.isRequired,
-    title: PropTypes.string.isRequired,
-    status: PropTypes.string.isRequired,
-    priority: PropTypes.string.isRequired,
-    type: PropTypes.string,
-    assignee: PropTypes.shape({
-      id: PropTypes.string,
-      name: PropTypes.string,
-      avatar: PropTypes.string,
-    }),
-    updatedAt: PropTypes.string.isRequired,
-  })).isRequired,
-  onIssueClick: PropTypes.func.isRequired,
+  issues: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      title: PropTypes.string.isRequired,
+      status: PropTypes.string.isRequired,
+    })
+  ).isRequired,
   onIssueMove: PropTypes.func.isRequired,
-  isLoading: PropTypes.bool,
-  error: PropTypes.string,
 };
 
 export default Board; 

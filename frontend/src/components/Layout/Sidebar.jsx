@@ -15,7 +15,7 @@ const Sidebar = ({ isMobile, onClose }) => {
   const navItems = [
     { id: 'dashboard', path: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
     { id: 'projects', path: '/projects', icon: ProjectIcon, label: 'Projects' },
-    { id: 'boards', path: '/boards', icon: ViewBoardsIcon, label: 'Boards' },
+    { id: 'boards', path: '/board', icon: ViewBoardsIcon, label: 'Boards' },
     { id: 'sprints', path: '/sprints', icon: SprintIcon, label: 'Sprints' },
     { id: 'settings', path: '/settings', icon: SettingsIcon, label: 'Settings' },
   ];
