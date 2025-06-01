@@ -16,6 +16,7 @@ import ProjectTeamPage from '../pages/projects/ProjectTeamPage';
 import BoardPage from '../pages/board/BoardPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import OTPVerification from '../pages/auth/OTPVerification';
+import AIFeaturesPage from '../pages/ai/AIFeaturesPage';
 import ProtectedRoute from './ProtectedRoute';
 
 export const routes = [
@@ -89,6 +90,10 @@ export const routes = [
               {
                 path: '/profile',
                 element: <ProfilePage />,
+              },
+              {
+                path: '/projects/:projectId/ai-features',
+                element: <AIFeaturesPage />,
               },
             ]
           }

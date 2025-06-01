@@ -5,12 +5,16 @@ import {
   SearchIcon, BellIcon, QuestionIcon,
   CreateIcon, MenuIcon
 } from '../common/Icons/index.jsx';
+import CreateProjectModal from '../dashboard/CreateProjectModal';
+import { api } from '../../api';
 
 const Header = ({ onMenuClick, isMobile }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -23,6 +27,21 @@ const Header = ({ onMenuClick, isMobile }) => {
     }
   };
 
+  const handleCreateProject = async (projectData) => {
+    setCreateLoading(true);
+    try {
+      const response = await api.projects.create(projectData);
+      const newProject = response.data.data.project;
+      setShowCreateProjectModal(false);
+      navigate(`/projects/${newProject.id}`);
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      throw error;
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   const userMenuItems = [
     { label: 'Profile', path: '/profile', action: null },
     { label: 'Account settings', path: '/settings/account', action: null },
@@ -30,7 +49,13 @@ const Header = ({ onMenuClick, isMobile }) => {
   ];
 
   const createMenuItems = [
-    { label: 'Create project', path: '/projects/new' },
+    { 
+      label: 'Create project', 
+      action: () => {
+        setIsCreateMenuOpen(false);
+        setShowCreateProjectModal(true);
+      }
+    },
     { label: 'Create board', path: '/boards/new' },
     { label: 'Create issue', path: '/issues/new' },
   ];
@@ -75,14 +100,24 @@ const Header = ({ onMenuClick, isMobile }) => {
               {isCreateMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                   {createMenuItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsCreateMenuOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
+                    item.path ? (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsCreateMenuOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <button
+                        key={item.label}
+                        onClick={item.action}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        {item.label}
+                      </button>
+                    )
                   ))}
                 </div>
               )}
@@ -143,6 +178,14 @@ const Header = ({ onMenuClick, isMobile }) => {
           </div>
         </div>
       </div>
+
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        isOpen={showCreateProjectModal}
+        onClose={() => setShowCreateProjectModal(false)}
+        onSubmit={handleCreateProject}
+        loading={createLoading}
+      />
     </header>
   );
 };

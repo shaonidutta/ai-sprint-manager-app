@@ -176,14 +176,17 @@ export const aiUtils = {
   },
 
   // Get risk level color
-  getRiskLevelColor: (riskLevel) => {
-    const colors = {
-      'Low': 'text-green-600 bg-green-100',
-      'Medium': 'text-yellow-600 bg-yellow-100',
-      'High': 'text-orange-600 bg-orange-100',
-      'Critical': 'text-red-600 bg-red-100'
-    };
-    return colors[riskLevel] || 'text-gray-600 bg-gray-100';
+  getRiskLevelColor: (level) => {
+    switch (level.toLowerCase()) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   },
 
   // Get team morale color
@@ -237,16 +240,55 @@ export const aiUtils = {
   },
 
   // Format AI insights for dashboard
-  formatDashboardInsights: (insights) => {
+  formatDashboardInsights: (data) => {
     return {
-      ...insights,
-      generatedAt: new Date(insights.generatedAt).toLocaleString(),
-      projectInsights: insights.projectInsights?.map(insight => ({
+      generatedAt: new Date(data.generatedAt).toLocaleString(),
+      projectInsights: data.projectInsights?.map(insight => ({
         ...insight,
-        lastUpdated: new Date(insight.lastUpdated).toLocaleDateString()
+        lastUpdated: new Date(insight.lastUpdated).toLocaleString(),
       })) || [],
-      recommendations: insights.recommendations || [],
-      trends: insights.trends || {}
+      recommendations: data.recommendations || [],
+      trends: data.trends || {},
     };
-  }
+  },
+
+  formatSprintPlanningData: (data) => {
+    return {
+      suggestedStoryPoints: data.suggestedStoryPoints,
+      suggestedDuration: data.suggestedDuration,
+      recommendedIssues: data.recommendedIssues || [],
+      teamCapacity: data.teamCapacity,
+      historicalVelocity: data.historicalVelocity,
+    };
+  },
+
+  formatScopeCreepData: (data) => {
+    return {
+      riskLevel: data.riskLevel,
+      riskScore: data.riskScore,
+      detectedPatterns: data.detectedPatterns || [],
+      recommendations: data.recommendations || [],
+      historicalTrend: data.historicalTrend || [],
+    };
+  },
+
+  formatRiskAssessmentData: (data) => {
+    return {
+      overallRisk: data.overallRisk,
+      riskFactors: data.riskFactors || [],
+      mitigationStrategies: data.mitigationStrategies || [],
+      timeline: data.timeline,
+      confidence: data.confidence,
+    };
+  },
+
+  formatRetrospectiveData: (data) => {
+    return {
+      sprintPerformance: data.sprintPerformance,
+      teamCollaboration: data.teamCollaboration,
+      improvements: data.improvements || [],
+      successes: data.successes || [],
+      challenges: data.challenges || [],
+    };
+  },
 };
