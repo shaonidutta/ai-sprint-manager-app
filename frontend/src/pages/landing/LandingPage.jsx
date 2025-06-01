@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import FeatureGrid from './components/FeatureGrid';
 import MobileMenu from './components/MobileMenu';
+import Footer from './components/Footer';
 
 const LandingPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -255,6 +256,9 @@ const LandingPage = () => {
           </div>
         </div>
       </motion.section>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
