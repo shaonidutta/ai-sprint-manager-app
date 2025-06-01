@@ -16,6 +16,7 @@ import ProjectSettingsPage from '../pages/projects/ProjectSettingsPage';
 import ProjectTeamPage from '../pages/projects/ProjectTeamPage';
 import BoardKanbanPage from '../pages/board/BoardKanbanPage';
 import ProfilePage from '../pages/profile/ProfilePage';
+import SettingsPage from '../pages/settings/SettingsPage';
 import OTPVerification from '../pages/auth/OTPVerification';
 import AIFeaturesPage from '../pages/ai/AIFeaturesPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -99,6 +100,10 @@ export const routes = [
               {
                 path: '/profile',
                 element: <ProfilePage />,
+              },
+              {
+                path: '/settings',
+                element: <SettingsPage />,
               },
               {
                 path: '/ai/dashboard/:projectId',
