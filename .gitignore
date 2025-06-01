@@ -1,0 +1,296 @@
+# AI Sprint Management App - Root .gitignore
+
+# ===========================
+# Environment Variables
+# ===========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.development
+.env.production
+.env.test
+
+# Frontend environment files
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Backend environment files
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/.env.test.local
+backend/.env.production.local
+
+# ===========================
+# Dependencies
+# ===========================
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ===========================
+# Build Outputs
+# ===========================
+# Frontend build outputs
+frontend/dist/
+frontend/dist-ssr/
+frontend/build/
+frontend/.next/
+frontend/.nuxt/
+frontend/.vuepress/dist/
+
+# Backend build outputs
+backend/dist/
+backend/build/
+
+# ===========================
+# Logs
+# ===========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Backend specific logs
+backend/logs/
+backend/*.log
+
+# ===========================
+# Runtime Data
+# ===========================
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ===========================
+# Coverage & Testing
+# ===========================
+coverage/
+*.lcov
+.nyc_output
+test-results/
+.jest/
+.coverage/
+
+# ===========================
+# Cache Directories
+# ===========================
+.npm
+.eslintcache
+.node_repl_history
+.cache
+.parcel-cache
+*.tgz
+.yarn-integrity
+
+# ===========================
+# IDE & Editor Files
+# ===========================
+# VSCode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.vscode-test
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===========================
+# OS Generated Files
+# ===========================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===========================
+# Application Specific
+# ===========================
+# File uploads
+uploads/
+backend/uploads/
+frontend/uploads/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Sample data files (contains test data, not for production)
+backend/sample_data.sql
+**/sample_data.sql
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ===========================
+# Security & Secrets
+# ===========================
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# API keys and secrets
+secrets/
+.secrets/
+config/secrets.json
+
+# ===========================
+# Development Tools
+# ===========================
+# Serverless
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# ===========================
+# Frontend Specific
+# ===========================
+# React/Vite specific
+frontend/*.local
+frontend/.vite/
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Nuxt.js
+frontend/.nuxt/
+
+# ===========================
+# Backend Specific
+# ===========================
+# Express.js uploads
+backend/public/uploads/
+
+# Session store
+backend/sessions/
+
+# ===========================
+# Docker
+# ===========================
+# Docker files (if added later)
+.dockerignore
+docker-compose.override.yml
+
+# ===========================
+# Deployment
+# ===========================
+# Deployment artifacts
+.deploy/
+deploy/
+.vercel
+.netlify
+
+# ===========================
+# Monitoring & Analytics
+# ===========================
+# Error tracking
+.sentry-cli
+
+# ===========================
+# Backup Files
+# ===========================
+*.backup
+*.bak
+*.old
+*.orig
+
+# ===========================
+# Archive Files
+# ===========================
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ===========================
+# Custom Ignores
+# ===========================
+todo
+.sql
+TODO.md
+todo.md

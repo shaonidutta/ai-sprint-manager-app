@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Atlassian Design System Base Styles */
+@layer base {
+  * {
+    @apply border-neutral-200;
+  }
+
+  html {
+    @apply font-atlassian;
+  }
+
+  body {
+    @apply bg-neutral-50 text-neutral-900 antialiased;
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  h1 {
+    @apply text-display text-neutral-800;
+  }
+
+  h2 {
+    @apply text-heading text-neutral-800;
+  }
+
+  h3 {
+    @apply text-subheading text-neutral-800;
+  }
+
+  p {
+    @apply text-body text-neutral-700;
+  }
+
+  small {
+    @apply text-small text-neutral-500;
+  }
+}
+
+/* Atlassian Component Styles */
+@layer components {
+  /* Button Components */
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-atlassian transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent hover:bg-neutral-100 text-primary-500 font-medium py-2 px-4 border border-primary-500 rounded-atlassian transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-neutral-100 text-neutral-700 font-medium py-2 px-4 rounded-atlassian transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2;
+  }
+
+  /* Card Component */
+  .card {
+    @apply bg-white rounded-atlassian shadow-card border border-neutral-200 p-4;
+  }
+
+  /* Input Components */
+  .input-field {
+    @apply w-full px-3 py-2 border border-neutral-300 rounded-atlassian focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+  }
+}

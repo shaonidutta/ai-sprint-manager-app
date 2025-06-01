@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sprint text -->
+  <text x="10" y="35" font-family="Arial" font-weight="bold" font-size="32" fill="#0052CC">
+    Sprint
+  </text>
+  <!-- Manager text -->
+  <text x="100" y="35" font-family="Arial" font-weight="normal" font-size="32" fill="#253858">
+    Manager
+  </text>
+</svg> 
