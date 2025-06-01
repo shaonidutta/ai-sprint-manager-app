@@ -22,10 +22,10 @@ export const API_ENDPOINTS = {
     UPDATE: (id) => `/projects/${id}`,
     DELETE: (id) => `/projects/${id}`,
     MEMBERS: {
-      LIST: (id) => `/projects/${id}/members`,
-      ADD: (id) => `/projects/${id}/members`,
-      UPDATE: (id, userId) => `/projects/${id}/members/${userId}`,
-      REMOVE: (id, userId) => `/projects/${id}/members/${userId}`
+      LIST: (id) => `/projects/${id}/team`,
+      ADD: (id) => `/projects/${id}/team`,
+      UPDATE: (id, userId) => `/projects/${id}/team/${userId}`,
+      REMOVE: (id, userId) => `/projects/${id}/team/${userId}`
     }
   },
   BOARDS: {

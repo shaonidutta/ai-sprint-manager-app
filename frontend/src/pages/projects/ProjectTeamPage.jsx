@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, Button, Input } from '../../components/common';
 import { api } from '../../api';
+import { useAuth } from '../../context/AuthContext';
 
 const ProjectTeamPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [project, setProject] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -23,9 +26,10 @@ const ProjectTeamPage = () => {
         api.projects.getById(id),
         api.projects.getTeamMembers(id)
       ]);
-      
+
       setProject(projectResponse.data.data.project);
       setTeamMembers(teamResponse.data.data.team_members || []);
+      setCurrentUserRole(projectResponse.data.data.user_role);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch project/team data:', err);
@@ -121,6 +125,13 @@ const ProjectTeamPage = () => {
 
   const getInitials = (firstName, lastName) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  };
+
+  // Helper function to check if current user should see role dropdowns
+  const shouldShowRoleDropdown = () => {
+    // Hide role dropdown for Admin users as per requirement
+    // Show dropdown for Project Manager and Developer roles
+    return currentUserRole && currentUserRole !== 'Admin';
   };
 
   if (loading) {
@@ -240,16 +251,22 @@ const ProjectTeamPage = () => {
                     {member.role}
                   </span>
 
-                  <select
-                    value={member.role}
-                    onChange={(e) => handleUpdateRole(member.id, e.target.value)}
-                    disabled={saving}
-                    className="text-sm border border-neutral-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="Developer">Developer</option>
-                    <option value="Project Manager">Project Manager</option>
-                    <option value="Admin">Admin</option>
-                  </select>
+                  {shouldShowRoleDropdown() ? (
+                    <select
+                      value={member.role}
+                      onChange={(e) => handleUpdateRole(member.id, e.target.value)}
+                      disabled={saving}
+                      className="text-sm border border-neutral-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="Developer">Developer</option>
+                      <option value="Project Manager">Project Manager</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                  ) : (
+                    <span className={`px-3 py-1 text-xs font-medium rounded-md ${getRoleColor(member.role)} border`}>
+                      {member.role}
+                    </span>
+                  )}
 
                   <Button
                     variant="outline"
