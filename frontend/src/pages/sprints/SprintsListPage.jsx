@@ -124,11 +124,11 @@ const SprintsListPage = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Sprints</h1>
           <p className="text-neutral-600">Manage your project sprints and iterations</p>
         </div>
-        <Button 
-          onClick={() => navigate('/sprints/new')}
+        <Button
+          onClick={() => navigate(`/sprints/planning?project=${selectedProject}`)}
           disabled={!selectedProject}
         >
-          Create Sprint
+          Sprint Planning
         </Button>
       </div>
 

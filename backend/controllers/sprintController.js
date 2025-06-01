@@ -19,10 +19,10 @@ class SprintController {
 
       const result = await Sprint.findByBoardId(boardId, userId, options);
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprints retrieved successfully',
-        data: result
-      }));
+      res.status(200).json(formatSuccessResponse(
+        result,
+        'Sprints retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting board sprints:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -42,10 +42,10 @@ class SprintController {
       // This will throw an error if user doesn't have access
       await Sprint.findByBoardId(boardId, userId, { limit: 1 });
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprint retrieved successfully',
-        data: { sprint }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { sprint },
+        'Sprint retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting sprint by ID:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -79,10 +79,10 @@ class SprintController {
 
       const sprint = await Sprint.create(sprintData);
 
-      res.status(201).json(formatSuccessResponse({
-        message: 'Sprint created successfully',
-        data: { sprint }
-      }));
+      res.status(201).json(formatSuccessResponse(
+        { sprint },
+        'Sprint created successfully'
+      ));
     } catch (error) {
       logger.error('Error creating sprint:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -119,10 +119,10 @@ class SprintController {
 
       await sprint.save();
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprint updated successfully',
-        data: { sprint }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { sprint },
+        'Sprint updated successfully'
+      ));
     } catch (error) {
       logger.error('Error updating sprint:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -143,10 +143,10 @@ class SprintController {
 
       await sprint.start(userId);
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprint started successfully',
-        data: { sprint }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { sprint },
+        'Sprint started successfully'
+      ));
     } catch (error) {
       logger.error('Error starting sprint:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -167,10 +167,10 @@ class SprintController {
 
       await sprint.complete(userId);
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprint completed successfully',
-        data: { sprint }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { sprint },
+        'Sprint completed successfully'
+      ));
     } catch (error) {
       logger.error('Error completing sprint:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -191,9 +191,10 @@ class SprintController {
 
       await sprint.delete();
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprint deleted successfully'
-      }));
+      res.status(200).json(formatSuccessResponse(
+        null,
+        'Sprint deleted successfully'
+      ));
     } catch (error) {
       logger.error('Error deleting sprint:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -214,10 +215,10 @@ class SprintController {
 
       const issues = await sprint.getIssues();
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprint issues retrieved successfully',
-        data: { issues }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { issues },
+        'Sprint issues retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting sprint issues:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -238,10 +239,10 @@ class SprintController {
 
       const burndownData = await sprint.getBurndownData();
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprint burndown data retrieved successfully',
-        data: { burndown: burndownData }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { burndown: burndownData },
+        'Sprint burndown data retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting sprint burndown:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
@@ -295,10 +296,10 @@ class SprintController {
         burndown: burndownData
       };
 
-      res.status(200).json(formatSuccessResponse({
-        message: 'Sprint report retrieved successfully',
-        data: { report }
-      }));
+      res.status(200).json(formatSuccessResponse(
+        { report },
+        'Sprint report retrieved successfully'
+      ));
     } catch (error) {
       logger.error('Error getting sprint report:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));

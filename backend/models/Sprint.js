@@ -135,7 +135,7 @@ class Sprint {
       const query = `
         SELECT s.*, 
                b.name as board_name, b.project_id,
-               p.name as project_name, p.key as project_key,
+               p.name as project_name, p.project_key,
                u.first_name, u.last_name, u.email as creator_email
         FROM sprints s
         INNER JOIN boards b ON s.board_id = b.id
@@ -183,15 +183,21 @@ class Sprint {
   static async findByBoardId(boardId, userId, options = {}) {
     try {
       const { page = 1, limit = 10, status, search = '' } = options;
-      const offset = (page - 1) * limit;
+
+      // Ensure parameters are integers
+      const boardIdInt = parseInt(boardId);
+      const userIdInt = parseInt(userId);
+      const pageInt = parseInt(page);
+      const limitInt = parseInt(limit);
+      const offsetInt = (pageInt - 1) * limitInt;
 
       // Check if user has access to board
       const accessCheck = await database.query(
-        `SELECT b.project_id 
-         FROM boards b 
-         INNER JOIN user_projects up ON b.project_id = up.project_id 
+        `SELECT b.project_id
+         FROM boards b
+         INNER JOIN user_projects up ON b.project_id = up.project_id
          WHERE b.id = ? AND up.user_id = ? AND up.deleted_at IS NULL`,
-        [boardId, userId]
+        [boardIdInt, userIdInt]
       );
 
       if (accessCheck.length === 0) {
@@ -199,7 +205,7 @@ class Sprint {
       }
 
       let whereClause = 'WHERE s.board_id = ?';
-      let queryParams = [boardId];
+      let queryParams = [boardIdInt];
 
       if (status) {
         whereClause += ' AND s.status = ?';
@@ -211,20 +217,17 @@ class Sprint {
         queryParams.push(`%${search}%`, `%${search}%`);
       }
 
+      // Use string interpolation for LIMIT and OFFSET to avoid MySQL parameter issues
       const query = `
-        SELECT s.*, 
-               u.first_name, u.last_name,
-               (SELECT COUNT(*) FROM issues WHERE sprint_id = s.id) as issue_count,
-               (SELECT SUM(story_points) FROM issues WHERE sprint_id = s.id AND status = 'Done') as completed_story_points,
-               (SELECT SUM(story_points) FROM issues WHERE sprint_id = s.id) as total_story_points
+        SELECT s.*,
+               u.first_name, u.last_name
         FROM sprints s
         INNER JOIN users u ON s.created_by = u.id
         ${whereClause}
         ORDER BY s.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT ${limitInt} OFFSET ${offsetInt}
       `;
       
-      queryParams.push(limit, offset);
       const rows = await database.query(query, queryParams);
       
       const sprints = rows.map(row => {
@@ -234,10 +237,11 @@ class Sprint {
           firstName: row.first_name,
           lastName: row.last_name
         };
+        // Initialize stats - will be populated separately if needed
         sprint.stats = {
-          issueCount: row.issue_count,
-          completedStoryPoints: row.completed_story_points || 0,
-          totalStoryPoints: row.total_story_points || 0
+          issueCount: 0,
+          completedStoryPoints: 0,
+          totalStoryPoints: 0
         };
         return sprint;
       });
@@ -248,17 +252,16 @@ class Sprint {
         FROM sprints s 
         ${whereClause}
       `;
-      const countParams = queryParams.slice(0, -2); // Remove limit and offset
-      const countResult = await database.query(countQuery, countParams);
+      const countResult = await database.query(countQuery, queryParams);
       const total = countResult[0].total;
 
       return {
         sprints,
         pagination: {
-          page,
-          limit,
+          page: pageInt,
+          limit: limitInt,
           total,
-          totalPages: Math.ceil(total / limit)
+          totalPages: Math.ceil(total / limitInt)
         }
       };
     } catch (error) {

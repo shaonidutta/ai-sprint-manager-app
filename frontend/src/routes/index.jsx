@@ -10,10 +10,13 @@ import Dashboard from '../pages/Dashboard';
 import ProjectsListPage from '../pages/projects/ProjectsListPage';
 import BoardsListPage from '../pages/boards/BoardsListPage';
 import SprintsListPage from '../pages/sprints/SprintsListPage';
+import SprintPlanningPage from '../pages/sprints/SprintPlanningPage';
+import JiraSprintPlanningPage from '../pages/sprints/JiraSprintPlanningPage';
 import ProjectDetailPage from '../pages/projects/ProjectDetailPage';
 import ProjectSettingsPage from '../pages/projects/ProjectSettingsPage';
 import ProjectTeamPage from '../pages/projects/ProjectTeamPage';
 import BoardPage from '../pages/board/BoardPage';
+import BoardKanbanPage from '../pages/board/BoardKanbanPage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import OTPVerification from '../pages/auth/OTPVerification';
 import AIFeaturesPage from '../pages/ai/AIFeaturesPage';
@@ -84,12 +87,24 @@ export const routes = [
                 element: <BoardsListPage />,
               },
               {
+                path: '/board',
+                element: <BoardKanbanPage />,
+              },
+              {
                 path: '/boards/:id',
                 element: <BoardPage />,
               },
               {
                 path: '/sprints',
                 element: <SprintsListPage />,
+              },
+              {
+                path: '/sprints/planning',
+                element: <JiraSprintPlanningPage />,
+              },
+              {
+                path: '/sprints/new',
+                element: <SprintPlanningPage />,
               },
               {
                 path: '/profile',

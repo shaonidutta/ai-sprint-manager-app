@@ -187,7 +187,7 @@ class Issue {
       const query = `
         SELECT i.*, 
                b.name as board_name, b.project_id,
-               p.name as project_name, p.key as project_key,
+               p.name as project_name, p.project_key,
                assignee.first_name as assignee_first_name, assignee.last_name as assignee_last_name,
                assignee.email as assignee_email,
                reporter.first_name as reporter_first_name, reporter.last_name as reporter_last_name,
