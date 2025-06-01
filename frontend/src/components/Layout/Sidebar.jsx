@@ -4,8 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../routes/constants';
 import { 
   HomeIcon, ViewBoardsIcon, ProjectIcon, 
-  SprintIcon, SettingsIcon, AIIcon,
-  MenuIcon
+  SprintIcon, SettingsIcon
 } from '../common/Icons';
 
 const Sidebar = ({ isMobile, onClose }) => {
@@ -13,23 +12,13 @@ const Sidebar = ({ isMobile, onClose }) => {
   const { user } = useAuth();
   const { projectId } = useParams();
 
-  const getNavItems = (currentProjectId) => [
+  const navItems = [
     { id: 'dashboard', path: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
     { id: 'projects', path: '/projects', icon: ProjectIcon, label: 'Projects' },
     { id: 'boards', path: '/boards', icon: ViewBoardsIcon, label: 'Boards' },
     { id: 'sprints', path: '/sprints', icon: SprintIcon, label: 'Sprints' },
-    ...(currentProjectId ? [
-      { 
-        id: 'ai-features',
-        path: `/projects/${currentProjectId}/ai-features`,
-        icon: AIIcon, 
-        label: 'AI Features'
-      }
-    ] : []),
     { id: 'settings', path: '/settings', icon: SettingsIcon, label: 'Settings' },
   ];
-
-  const navItems = getNavItems(projectId);
 
   const sidebarClasses = `
     fixed md:relative bg-gray-900 text-white transition-all duration-300 ease-in-out h-full
