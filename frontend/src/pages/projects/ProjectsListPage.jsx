@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, Button, Input } from '../../components/common';
+import { SearchIcon, ChevronDownIcon, ArrowRightIcon, CloseIcon } from '../../components/common/Icons';
 import { api } from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { formatRelativeTime } from '../../utils/dateUtils';
 import CreateProjectModal from '../../components/dashboard/CreateProjectModal';
 
 const ProjectsListPage = () => {
@@ -77,20 +79,8 @@ const ProjectsListPage = () => {
     navigate(`/projects/${projectId}`);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getProjectInitials = (name) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase())
-      .slice(0, 2)
-      .join('');
+  const clearSearch = () => {
+    setSearchTerm('');
   };
 
   return (
@@ -107,39 +97,91 @@ const ProjectsListPage = () => {
         </div>
 
         {/* Search and Filters */}
-        <Card className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                id="search-projects"
-                name="search"
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-neutral-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="updated_at">Last Updated</option>
-                <option value="created_at">Created Date</option>
-                <option value="name">Name</option>
-              </select>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                className="px-3 py-2 border border-neutral-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="desc">Descending</option>
-                <option value="asc">Ascending</option>
-              </select>
+        <div className="bg-white border border-neutral-200 rounded-sm shadow-card">
+          <div className="p-4">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Enhanced Search Field */}
+              <div className="flex-1 relative">
+                <div className="relative">
+                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                  <input
+                    id="search-projects"
+                    name="search"
+                    type="text"
+                    placeholder="Search projects..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="
+                      w-full pl-10 pr-10 py-2
+                      border border-neutral-300 rounded-sm
+                      text-body text-neutral-900 placeholder-neutral-500
+                      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+                      transition-all duration-200 ease-in-out
+                      hover:border-neutral-400
+                    "
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={clearSearch}
+                      className="
+                        absolute right-3 top-1/2 transform -translate-y-1/2
+                        w-4 h-4 text-neutral-500 hover:text-neutral-700
+                        transition-colors duration-200
+                      "
+                      aria-label="Clear search"
+                    >
+                      <CloseIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Enhanced Filter Dropdowns */}
+              <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="
+                      appearance-none pl-3 pr-8 py-2 w-full sm:w-auto
+                      border border-neutral-300 rounded-sm
+                      text-body text-neutral-900 bg-white
+                      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+                      transition-all duration-200 ease-in-out
+                      hover:border-neutral-400 hover:bg-neutral-50
+                      cursor-pointer
+                    "
+                  >
+                    <option value="updated_at">Last Updated</option>
+                    <option value="created_at">Created Date</option>
+                    <option value="name">Name</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+                </div>
+
+                <div className="relative">
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="
+                      appearance-none pl-3 pr-8 py-2 w-full sm:w-auto
+                      border border-neutral-300 rounded-sm
+                      text-body text-neutral-900 bg-white
+                      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+                      transition-all duration-200 ease-in-out
+                      hover:border-neutral-400 hover:bg-neutral-50
+                      cursor-pointer
+                    "
+                  >
+                    <option value="desc">Descending</option>
+                    <option value="asc">Ascending</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+                </div>
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Error Message */}
         {error && (
@@ -148,23 +190,22 @@ const ProjectsListPage = () => {
           </Card>
         )}
 
-        {/* Projects Grid */}
+        {/* Projects List */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white border border-neutral-200 rounded-sm shadow-card">
             {[...Array(6)].map((_, index) => (
-              <Card key={index} className="p-6 animate-pulse">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-neutral-200 rounded-md"></div>
+              <div key={index} className="p-4 border-b border-neutral-200 last:border-b-0 animate-pulse">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex-1">
-                    <div className="h-4 bg-neutral-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
+                    <div className="h-5 bg-neutral-200 rounded w-2/3 sm:w-1/3 mb-2"></div>
+                    <div className="flex flex-col sm:flex-row sm:gap-4">
+                      <div className="h-4 bg-neutral-200 rounded w-1/4 sm:w-1/6 mb-1 sm:mb-0"></div>
+                      <div className="h-3 bg-neutral-200 rounded w-1/2 sm:w-1/4"></div>
+                    </div>
                   </div>
+                  <div className="h-8 w-full sm:w-16 bg-neutral-200 rounded"></div>
                 </div>
-                <div className="space-y-2">
-                  <div className="h-3 bg-neutral-200 rounded"></div>
-                  <div className="h-3 bg-neutral-200 rounded w-5/6"></div>
-                </div>
-              </Card>
+              </div>
             ))}
           </div>
         ) : projects.length === 0 ? (
@@ -187,68 +228,76 @@ const ProjectsListPage = () => {
             </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => {
+          <div className="bg-white border border-neutral-200 rounded-sm shadow-card overflow-hidden">
+            {projects.map((project, index) => {
               console.log('[ProjectsListPage] Rendering project:', project);
               return (
-                <Card
+                <div
                   key={project.id}
-                  className="p-6 hover:shadow-lg transition-shadow"
-                >
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-primary-500 text-white rounded-md flex items-center justify-center font-medium">
-                    {getProjectInitials(project.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-medium text-neutral-900 truncate">
-                      {project.name}
-                    </h3>
-                    <p className="text-sm text-neutral-500">
-                      {project.project_key}
-                    </p>
-                  </div>
-                </div>
-
-                {project.description && (
-                  <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-between text-sm text-neutral-500 mb-4">
-                  <span>Updated {formatDate(project.updated_at)}</span>
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                    <span>Team</span>
-                  </div>
-                </div>
-
-                {/* Details Button */}
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                  className="
+                    group p-4 border-b border-neutral-200 last:border-b-0
+                    hover:bg-neutral-50 transition-all duration-200 ease-in-out
+                    cursor-pointer
+                  "
+                  onClick={() => handleProjectClick(project.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
                       handleProjectClick(project.id);
-                    }}
-                    className="
-                      px-4 py-2 text-sm font-medium
-                      border border-neutral-300 bg-white text-neutral-700
-                      hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700
-                      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
-                      transition-all duration-300 ease-in-out
-                      transform hover:scale-105
-                      shadow-sm hover:shadow-md
-                      opacity-80 hover:opacity-100
-                    "
-                  >
-                    Details
-                  </Button>
+                    }
+                  }}
+                  aria-label={`View details for ${project.name}`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    {/* Project Information */}
+                    <div className="flex-1 min-w-0">
+                      {/* Project Name */}
+                      <h3 className="
+                        text-subheading font-medium text-neutral-900
+                        truncate mb-1
+                        group-hover:text-primary-600 transition-colors duration-200
+                      ">
+                        {project.name}
+                      </h3>
+
+                      {/* Project Key and Last Updated - Mobile: stacked, Desktop: inline */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                        <p className="text-small text-neutral-500 font-mono uppercase tracking-wide">
+                          {project.project_key}
+                        </p>
+                        <p className="text-small text-neutral-500">
+                          {formatRelativeTime(project.updated_at)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Details Button */}
+                    <div className="flex-shrink-0 self-start sm:self-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProjectClick(project.id);
+                        }}
+                        className="
+                          inline-flex items-center gap-2 px-3 py-2
+                          text-small font-medium text-neutral-700
+                          border border-neutral-300 rounded-sm bg-white
+                          hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700
+                          focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+                          transition-all duration-200 ease-in-out
+                          group-hover:border-primary-300 group-hover:text-primary-700
+                          w-full sm:w-auto justify-center sm:justify-start
+                        "
+                        aria-label={`View details for ${project.name}`}
+                      >
+                        Details
+                        <ArrowRightIcon className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </Card>
               );
             })}
           </div>
