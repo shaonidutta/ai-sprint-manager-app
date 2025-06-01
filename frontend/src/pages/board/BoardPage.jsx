@@ -12,6 +12,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -24,8 +25,38 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// Droppable Column Component
+const DroppableColumn = ({ column, issues, children, isOver, isDragging }) => {
+  const { setNodeRef } = useDroppable({
+    id: `column-${column.id}`,
+  });
+
+  const getColumnStyles = () => {
+    let baseStyles = `flex-1 rounded-b-lg p-4 min-h-96 transition-all duration-200 `;
+
+    if (isOver && isDragging) {
+      baseStyles += 'bg-blue-50 border-2 border-blue-300 border-dashed ';
+    } else if (isDragging) {
+      baseStyles += 'bg-neutral-50 border-2 border-transparent ';
+    } else {
+      baseStyles += 'bg-neutral-50 ';
+    }
+
+    return baseStyles;
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={getColumnStyles()}
+    >
+      {children}
+    </div>
+  );
+};
+
 // Draggable Issue Card Component
-const DraggableIssueCard = ({ issue, onClick }) => {
+const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
   const {
     attributes,
     listeners,
@@ -37,9 +68,18 @@ const DraggableIssueCard = ({ issue, onClick }) => {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: isDragOverlay ? 'none' : transition,
+    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
   };
+
+  const cardClasses = `
+    p-4 cursor-grab active:cursor-grabbing
+    hover:shadow-md transition-all duration-200
+    ${isDragging ? 'shadow-xl rotate-2 scale-105' : ''}
+    ${isDragOverlay ? 'shadow-2xl rotate-3 scale-110' : ''}
+    ${isDragging || isDragOverlay ? 'bg-white border-blue-300' : 'bg-white border-gray-200'}
+  `;
 
   return (
     <Card
@@ -47,9 +87,7 @@ const DraggableIssueCard = ({ issue, onClick }) => {
       style={style}
       {...attributes}
       {...listeners}
-      className={`p-4 cursor-pointer hover:shadow-md transition-shadow ${
-        isDragging ? 'shadow-lg' : ''
-      }`}
+      className={cardClasses}
       onClick={onClick}
     >
       <div className="space-y-2">
@@ -118,6 +156,9 @@ const BoardPage = () => {
   const [showIssueDetailModal, setShowIssueDetailModal] = useState(false);
   const [selectedIssueId, setSelectedIssueId] = useState(null);
   const [activeId, setActiveId] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOverColumn, setDragOverColumn] = useState(null);
+  const [isUpdatingIssue, setIsUpdatingIssue] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -230,11 +271,27 @@ const BoardPage = () => {
 
   const handleDragStart = (event) => {
     setActiveId(event.active.id);
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (event) => {
+    const { over } = event;
+
+    if (over && over.id.startsWith('column-')) {
+      const columnId = over.id.replace('column-', '');
+      setDragOverColumn(columnId);
+    } else {
+      setDragOverColumn(null);
+    }
   };
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
+
+    // Reset drag state
     setActiveId(null);
+    setIsDragging(false);
+    setDragOverColumn(null);
 
     if (!over) return;
 
@@ -270,19 +327,33 @@ const BoardPage = () => {
       return;
     }
 
-    try {
-      // Update issue status via API
-      await api.issues.update(activeIssue.id, { status: newStatus });
+    // Set loading state
+    setIsUpdatingIssue(true);
 
-      // Update local state
+    try {
+      // Optimistically update local state
+      const originalIssues = [...issues];
       setIssues(prev => prev.map(issue =>
         issue.id === activeIssue.id
           ? { ...issue, status: newStatus }
           : issue
       ));
+
+      // Update issue status via API
+      await api.issues.update(activeIssue.id, { status: newStatus });
+
+      console.log(`Successfully moved issue ${activeIssue.id} to ${newStatus}`);
     } catch (err) {
       console.error('Failed to update issue status:', err);
-      alert('Failed to update issue status. Please try again.');
+
+      // Rollback optimistic update
+      setIssues(originalIssues);
+
+      // Show user-friendly error message
+      const errorMessage = err.response?.data?.message || 'Failed to update issue status. Please try again.';
+      alert(errorMessage);
+    } finally {
+      setIsUpdatingIssue(false);
     }
   };
 
@@ -452,23 +523,28 @@ const BoardPage = () => {
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="grid grid-cols-3 gap-6">
         {columns.map((column) => {
           const columnIssues = getIssuesByStatus(column.id);
+          const isOver = dragOverColumn === column.id;
+
           return (
             <div key={column.id} className="flex flex-col">
               {/* Column Header */}
-              <div className={`${column.color} rounded-t-lg px-4 py-3 border-b ${
+              <div className={`${column.color} rounded-t-lg px-4 py-3 border-b transition-all duration-200 ${
                 isWipLimitExceeded(column.id, columnIssues.length) ? 'border-red-300' : ''
-              }`}>
+              } ${isOver && isDragging ? 'bg-blue-200' : ''}`}>
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium text-neutral-900">{column.title}</h3>
                   <div className="flex items-center space-x-2">
-                    <span className={`text-sm px-2 py-1 rounded-full ${
+                    <span className={`text-sm px-2 py-1 rounded-full transition-colors duration-200 ${
                       isWipLimitExceeded(column.id, columnIssues.length)
                         ? 'bg-red-100 text-red-800'
+                        : isOver && isDragging
+                        ? 'bg-blue-100 text-blue-800'
                         : 'bg-white text-neutral-600'
                     }`}>
                       {columnIssues.length}
@@ -479,6 +555,11 @@ const BoardPage = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                       </svg>
                     )}
+                    {isUpdatingIssue && (
+                      <div className="w-4 h-4">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -488,18 +569,32 @@ const BoardPage = () => {
                 items={columnIssues.map(issue => issue.id.toString())}
                 strategy={verticalListSortingStrategy}
               >
-                <div
-                  id={`column-${column.id}`}
-                  className="flex-1 bg-neutral-50 rounded-b-lg p-4 min-h-96"
+                <DroppableColumn
+                  column={column}
+                  issues={columnIssues}
+                  isOver={isOver}
+                  isDragging={isDragging}
                 >
                   <div className="space-y-3">
                     {columnIssues.length === 0 ? (
-                      <div className="text-center py-8 text-neutral-500">
-                        <svg className="w-8 h-8 mx-auto mb-2 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className={`text-center py-8 transition-all duration-200 ${
+                        isOver && isDragging
+                          ? 'text-blue-600'
+                          : 'text-neutral-500'
+                      }`}>
+                        <svg className={`w-8 h-8 mx-auto mb-2 transition-colors duration-200 ${
+                          isOver && isDragging
+                            ? 'text-blue-400'
+                            : 'text-neutral-400'
+                        }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                        <p className="text-sm">No issues</p>
-                        <p className="text-xs text-neutral-400 mt-1">Drop issues here</p>
+                        <p className="text-sm">
+                          {isOver && isDragging ? 'Drop issue here' : 'No issues'}
+                        </p>
+                        {!isOver && (
+                          <p className="text-xs text-neutral-400 mt-1">Drop issues here</p>
+                        )}
                       </div>
                     ) : (
                       columnIssues.map((issue) => (
@@ -511,7 +606,7 @@ const BoardPage = () => {
                       ))
                     )}
                   </div>
-                </div>
+                </DroppableColumn>
               </SortableContext>
             </div>
           );
@@ -523,6 +618,7 @@ const BoardPage = () => {
             <DraggableIssueCard
               issue={issues.find(issue => issue.id.toString() === activeId)}
               onClick={() => {}}
+              isDragOverlay={true}
             />
           ) : null}
         </DragOverlay>
