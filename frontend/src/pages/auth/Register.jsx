@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const Register = () => {
@@ -13,6 +13,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const { register, error } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -73,13 +74,21 @@ const Register = () => {
 
     setIsSubmitting(true);
     try {
-      await register({
+      const result = await register({
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
         confirmPassword: formData.confirmPassword
       });
+
+      // Navigate to verify-OTP page on successful registration
+      if (result.success) {
+        navigate(result.redirectTo, {
+          state: { email: result.email },
+          replace: true
+        });
+      }
     } catch (err) {
       console.error('Registration failed:', err);
     } finally {
