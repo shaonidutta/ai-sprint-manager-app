@@ -300,12 +300,12 @@ class IssueController {
     try {
       const { id } = req.params;
       const userId = req.user.id;
-      const { timeSpent, description, loggedDate } = req.body;
+      const { timeSpent, hoursLogged, description, loggedDate } = req.body;
 
       const timeLogData = {
         issue_id: id,
         user_id: userId,
-        time_spent: timeSpent,
+        hours_logged: hoursLogged || timeSpent, // Support both field names for compatibility
         description,
         logged_date: loggedDate || new Date().toISOString().split('T')[0]
       };

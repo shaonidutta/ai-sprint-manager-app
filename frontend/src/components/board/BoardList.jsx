@@ -107,7 +107,7 @@ const BoardList = ({ boards, isLoading, error }) => {
           <h3 className="mt-2 text-sm font-medium text-gray-900">No boards found</h3>
           <p className="mt-1 text-sm text-gray-500">
             {filterType === 'all'
-              ? 'Get started by creating a new board'
+              ? 'No boards available'
               : `No ${filterType} boards found`}
           </p>
         </div>

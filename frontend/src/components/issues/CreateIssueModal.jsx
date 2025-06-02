@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Select, TextArea, Avatar, Modal } from '../common';
 import { CloseIcon } from '../common/Icons';
+import UserDropdown from '../common/UserDropdown';
 import { api } from '../../api';
 
 // Issue Type Icons
@@ -316,88 +317,31 @@ const CreateIssueModal = ({ isOpen, onClose, boardId, onIssueCreated }) => {
               Assignee
             </label>
 
-            {loadingTeamMembers ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
-                <span className="ml-2 text-sm text-neutral-500">Loading team members...</span>
+            <UserDropdown
+              value={formData.assignee_id ? parseInt(formData.assignee_id) : null}
+              onChange={(userId) => setFormData(prev => ({ ...prev, assignee_id: userId ? userId.toString() : '' }))}
+              users={teamMembers}
+              placeholder="Select assignee..."
+              includeUnassigned={true}
+              disabled={loadingTeamMembers}
+              className="w-full"
+            />
+
+            {loadingTeamMembers && (
+              <div className="flex items-center justify-center py-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500"></div>
+                <span className="ml-2 text-xs text-neutral-500">Loading team members...</span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {/* Unassigned Option */}
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, assignee_id: '' }))}
-                  className={`
-                    w-full flex items-center space-x-3 p-3 rounded-lg border-2 transition-all duration-150 hover:shadow-sm
-                    ${formData.assignee_id === ''
-                      ? 'bg-neutral-50 border-neutral-400 shadow-sm'
-                      : 'bg-white border-neutral-200 hover:border-neutral-300'
-                    }
-                  `}
-                >
-                  <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <span className={`text-sm font-medium ${formData.assignee_id === '' ? 'text-neutral-800' : 'text-neutral-600'}`}>
-                    Unassigned
-                  </span>
-                  {formData.assignee_id === '' && (
-                    <div className="ml-auto">
-                      <svg className="w-4 h-4 text-neutral-600" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  )}
-                </button>
+            )}
 
-                {/* Team Members */}
-                {teamMembers
-                  .filter(member => member && member.id != null)
-                  .map(member => {
-                    const memberName = `${member.first_name || ''} ${member.last_name || ''}`.trim() || member.email || 'Unknown User';
-                    const isSelected = formData.assignee_id === member.id.toString();
-
-                    return (
-                      <button
-                        key={member.id}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, assignee_id: member.id.toString() }))}
-                        className={`
-                          w-full flex items-center space-x-3 p-3 rounded-lg border-2 transition-all duration-150 hover:shadow-sm
-                          ${isSelected
-                            ? 'bg-primary-50 border-primary-300 shadow-sm'
-                            : 'bg-white border-neutral-200 hover:border-neutral-300'
-                          }
-                        `}
-                      >
-                        <Avatar
-                          alt={memberName}
-                          fallbackText={memberName}
-                          size="small"
-                          className="flex-shrink-0"
-                        />
-                        <div className="flex-1 text-left">
-                          <p className={`text-sm font-medium ${isSelected ? 'text-primary-800' : 'text-neutral-700'}`}>
-                            {memberName}
-                          </p>
-                          {member.email && (
-                            <p className={`text-xs ${isSelected ? 'text-primary-600' : 'text-neutral-500'}`}>
-                              {member.email}
-                            </p>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <div className="ml-auto">
-                            <svg className="w-4 h-4 text-primary-600" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
+            {/* No team members message */}
+            {!loadingTeamMembers && teamMembers.length === 0 && (
+              <div className="text-center py-4 bg-gray-50 rounded-lg">
+                <svg className="mx-auto h-6 w-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <p className="mt-2 text-xs text-neutral-500">No team members found</p>
+                <p className="text-xs text-neutral-400">Invite team members to assign issues</p>
               </div>
             )}
           </div>
