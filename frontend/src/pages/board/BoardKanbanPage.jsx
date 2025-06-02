@@ -55,9 +55,12 @@ const DroppableColumn = ({ column, issues, children, isOver, isDragging }) => {
 };
 
 // Draggable Issue Card Component
-const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
+const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false, activeSprint = null }) => {
   // Check if issue is blocked
   const isBlocked = issue.blocked_reason && issue.blocked_reason.trim() !== '';
+
+  // Check if sprint is active - disable dragging if no active sprint
+  const isSprintInactive = !activeSprint || activeSprint.status !== 'Active';
 
   const {
     attributes,
@@ -68,7 +71,7 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
     isDragging,
   } = useSortable({
     id: issue.id.toString(),
-    disabled: isBlocked // Disable dragging for blocked issues
+    disabled: isBlocked || isSprintInactive // Disable dragging for blocked issues or inactive sprint
   });
 
   const style = {
@@ -154,6 +157,8 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
       className={`group relative bg-white rounded-lg transition-all duration-150 ${
         isBlocked
           ? 'border-2 border-red-300 bg-red-50 opacity-80'
+          : isSprintInactive
+          ? 'border border-gray-300 bg-gray-50 opacity-70'
           : 'border border-gray-200 hover:shadow-md hover:border-blue-300'
       } ${
         isDragging ? 'shadow-lg border-blue-400 transform rotate-1' : ''
@@ -163,14 +168,18 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
       <div
         {...listeners}
         className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
-          isBlocked
-            ? 'cursor-not-allowed text-red-300'
+          isBlocked || isSprintInactive
+            ? 'cursor-not-allowed text-gray-300'
             : 'cursor-grab active:cursor-grabbing text-gray-400'
         }`}
       >
         {isBlocked ? (
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+          </svg>
+        ) : isSprintInactive ? (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
         ) : (
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,6 +257,7 @@ const BoardKanbanPage = () => {
   const [selectedProject, setSelectedProject] = useState(projectId || '');
   const [selectedBoard, setSelectedBoard] = useState('');
   const [issues, setIssues] = useState([]);
+  const [activeSprint, setActiveSprint] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState('board'); // 'board' or 'backlog'
@@ -266,18 +276,44 @@ const BoardKanbanPage = () => {
     })
   );
 
-  // Kanban columns configuration
+  // Enhanced Kanban columns configuration
   const columns = [
-    { id: 'To Do', title: 'TO DO', color: 'bg-gray-100' },
-    { id: 'In Progress', title: 'IN PROGRESS', color: 'bg-blue-100' },
-    { id: 'Done', title: 'DONE', color: 'bg-green-100' }
+    {
+      id: 'To Do',
+      title: 'TO DO',
+      color: 'bg-gradient-to-r from-gray-100 to-gray-200',
+      textColor: 'text-gray-800',
+      borderColor: 'border-gray-300'
+    },
+    {
+      id: 'In Progress',
+      title: 'IN PROGRESS',
+      color: 'bg-gradient-to-r from-blue-100 to-blue-200',
+      textColor: 'text-blue-800',
+      borderColor: 'border-blue-300'
+    },
+    {
+      id: 'Done',
+      title: 'DONE',
+      color: 'bg-gradient-to-r from-green-100 to-green-200',
+      textColor: 'text-green-800',
+      borderColor: 'border-green-300'
+    }
   ];
 
-  // Fetch projects
+  // Fetch projects with auto-selection
   const fetchProjects = async () => {
     try {
       const response = await api.projects.getAll({ limit: 100 });
-      setProjects(response.data.data.projects || []);
+      const projectsData = response.data.data.projects || [];
+      setProjects(projectsData);
+
+      // Auto-select first project if no project is selected and projects are available
+      if (!selectedProject && projectsData.length > 0) {
+        const firstProject = projectsData[0];
+        setSelectedProject(firstProject.id.toString());
+        navigate(`/board?project=${firstProject.id}`, { replace: true });
+      }
     } catch (err) {
       console.error('Failed to fetch projects:', err);
     }
@@ -302,6 +338,26 @@ const BoardKanbanPage = () => {
     } catch (err) {
       console.error('Failed to fetch boards:', err);
       setError('Failed to load boards. Please try again.');
+    }
+  };
+
+  // Fetch active sprint for selected board
+  const fetchActiveSprint = async (boardId) => {
+    if (!boardId) {
+      setActiveSprint(null);
+      return;
+    }
+
+    try {
+      const response = await api.sprints.getAll(boardId);
+      const sprints = response.data.data.sprints || [];
+
+      // Find the active sprint
+      const activeSprintData = sprints.find(sprint => sprint.status === 'Active');
+      setActiveSprint(activeSprintData || null);
+    } catch (err) {
+      console.error('Failed to fetch active sprint:', err);
+      setActiveSprint(null);
     }
   };
 
@@ -343,8 +399,10 @@ const BoardKanbanPage = () => {
   useEffect(() => {
     if (selectedBoard) {
       fetchIssues(selectedBoard);
+      fetchActiveSprint(selectedBoard);
     } else {
       setIssues([]);
+      setActiveSprint(null);
       setLoading(false);
     }
   }, [selectedBoard]);
@@ -369,6 +427,12 @@ const BoardKanbanPage = () => {
 
   // Drag and drop handlers
   const handleDragStart = (event) => {
+    // Check if sprint is active before allowing drag
+    if (!activeSprint || activeSprint.status !== 'Active') {
+      console.log('Drag prevented: No active sprint');
+      return;
+    }
+
     setActiveId(event.active.id);
     setIsDragging(true);
   };
@@ -391,6 +455,12 @@ const BoardKanbanPage = () => {
     setActiveId(null);
     setIsDragging(false);
     setDragOverColumn(null);
+
+    // Check if sprint is active before allowing drop
+    if (!activeSprint || activeSprint.status !== 'Active') {
+      console.log('Drop prevented: No active sprint');
+      return;
+    }
 
     if (!over) return;
 
@@ -570,17 +640,39 @@ const BoardKanbanPage = () => {
 
         {/* Project/Board Info */}
         {selectedProjectData && selectedBoardData && (
-          <div className="mt-4 flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-500 text-white rounded flex items-center justify-center text-sm font-medium">
-              {selectedProjectData.project_key}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-500 text-white rounded flex items-center justify-center text-sm font-medium">
+                {selectedProjectData.project_key}
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  {selectedBoardData.name}
+                </h1>
+                <p className="text-sm text-gray-600">
+                  {selectedProjectData.name}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">
-                {selectedBoardData.name}
-              </h1>
-              <p className="text-sm text-gray-600">
-                {selectedProjectData.name}
-              </p>
+
+            {/* Enhanced Sprint Status Indicator */}
+            <div className="flex items-center space-x-2">
+              {activeSprint ? (
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex px-3 py-1.5 text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-300 shadow-sm">
+                    Active Sprint
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex px-3 py-1.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300 shadow-sm">
+                    No Active Sprint
+                  </span>
+                  <svg className="w-4 h-4 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -603,6 +695,23 @@ const BoardKanbanPage = () => {
         ) : view === 'board' ? (
           // Enhanced Kanban Board View with Drag and Drop
           <div className="h-full p-6">
+            {/* No Active Sprint Warning */}
+            {!activeSprint && (
+              <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-yellow-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-yellow-800">No Active Sprint</h3>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Issues cannot be moved between columns when no sprint is active. Start a sprint from the Sprint Planning page to enable drag-and-drop functionality.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <DndContext
               sensors={sensors}
               collisionDetection={closestCorners}
@@ -617,23 +726,25 @@ const BoardKanbanPage = () => {
 
                   return (
                     <div key={column.id} className="flex flex-col">
-                      {/* Column Header */}
-                      <div className={`${column.color} px-4 py-3 rounded-t-lg border-b transition-all duration-200 ${
-                        isOver && isDragging ? 'bg-blue-200' : ''
+                      {/* Enhanced Column Header */}
+                      <div className={`${column.color} px-4 py-4 rounded-t-xl border-b-2 ${column.borderColor} transition-all duration-300 shadow-sm ${
+                        isOver && isDragging ? 'bg-gradient-to-r from-blue-200 to-blue-300 scale-105 shadow-md' : ''
                       }`}>
                         <div className="flex items-center justify-between">
-                          <h3 className="font-medium text-gray-900">{column.title}</h3>
+                          <h3 className={`font-semibold tracking-wide ${column.textColor} ${isOver && isDragging ? 'text-blue-900' : ''}`}>
+                            {column.title}
+                          </h3>
                           <div className="flex items-center space-x-2">
-                            <span className={`text-sm px-2 py-1 rounded transition-colors duration-200 ${
+                            <span className={`text-sm px-3 py-1.5 rounded-full font-medium transition-all duration-300 shadow-sm ${
                               isOver && isDragging
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'text-gray-600 bg-white'
+                                ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                : 'text-gray-600 bg-white border border-gray-200'
                             }`}>
                               {columnIssues.length}
                             </span>
                             {isUpdatingIssue && (
-                              <div className="w-4 h-4">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                              <div className="w-5 h-5">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                               </div>
                             )}
                           </div>
@@ -678,6 +789,7 @@ const BoardKanbanPage = () => {
                                   key={issue.id}
                                   issue={issue}
                                   onClick={handleIssueClick}
+                                  activeSprint={activeSprint}
                                 />
                               ))
                             )}
@@ -695,6 +807,7 @@ const BoardKanbanPage = () => {
                     issue={issues.find(issue => issue.id.toString() === activeId)}
                     onClick={() => {}}
                     isDragOverlay={true}
+                    activeSprint={activeSprint}
                   />
                 ) : null}
               </DragOverlay>
