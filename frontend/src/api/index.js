@@ -57,8 +57,8 @@ export const api = {
   sprints: {
     getAll: (boardId) => axiosInstance.get(API_ENDPOINTS.SPRINTS.LIST(boardId)),
     create: (boardId, data) => axiosInstance.post(API_ENDPOINTS.SPRINTS.CREATE(boardId), data),
-    start: (id) => axiosInstance.put(API_ENDPOINTS.SPRINTS.START(id)),
-    complete: (id, data) => axiosInstance.put(API_ENDPOINTS.SPRINTS.COMPLETE(id), data),
+    start: (id) => axiosInstance.post(API_ENDPOINTS.SPRINTS.START(id)),
+    complete: (id, data) => axiosInstance.post(API_ENDPOINTS.SPRINTS.COMPLETE(id), data),
     addIssues: (id, data) => axiosInstance.post(API_ENDPOINTS.SPRINTS.ADD_ISSUES(id), data),
     removeIssue: (sprintId, issueId) => axiosInstance.delete(API_ENDPOINTS.SPRINTS.REMOVE_ISSUE(sprintId, issueId)),
   },

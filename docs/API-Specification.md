@@ -591,7 +591,7 @@ Create new sprint
 }
 ```
 
-### PUT /sprints/:id/start
+### POST /sprints/:id/start
 Start sprint
 ```json
 // Response
@@ -606,7 +606,7 @@ Start sprint
 }
 ```
 
-### PUT /sprints/:id/complete
+### POST /sprints/:id/complete
 Complete sprint
 ```json
 // Request

@@ -11,6 +11,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -69,8 +70,8 @@ const DraggableIssueCard = ({ issue }) => {
       style={style}
       {...attributes}
       {...listeners}
-      className={`p-3 bg-white border rounded-lg cursor-pointer hover:shadow-md transition-shadow ${
-        isDragging ? 'shadow-lg' : ''
+      className={`p-4 bg-white border border-gray-200 rounded-lg cursor-pointer transition-all duration-150 hover:shadow-md hover:border-blue-300 ${
+        isDragging ? 'shadow-lg border-blue-400 transform rotate-1' : ''
       }`}
     >
       <div className="flex items-start space-x-3">
@@ -85,17 +86,35 @@ const DraggableIssueCard = ({ issue }) => {
             </span>
             <div className="flex items-center space-x-2">
               {issue.story_points && (
-                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium">
                   {issue.story_points} SP
                 </span>
               )}
-              <span className={`text-xs ${getPriorityColor(issue.priority)}`}>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getPriorityColor(issue.priority)}`}>
                 {issue.priority}
               </span>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Droppable Sprint Area Component
+const DroppableSprintArea = ({ sprint, children }) => {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `sprint-${sprint.id}`,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`p-8 min-h-[120px] bg-gray-50 rounded-b-xl transition-colors duration-150 ${
+        isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
+      }`}
+    >
+      {children}
     </div>
   );
 };
@@ -468,28 +487,31 @@ const JiraSprintPlanningPage = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+          <div className="flex items-center space-x-4 sm:space-x-6">
             <Button
               variant="outline"
               onClick={() => navigate('/sprints')}
-              className="flex items-center space-x-2"
+              className="flex items-center justify-center w-10 h-10 p-0 transition-all duration-150 hover:bg-gray-50"
+              aria-label="Back to Sprints"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span>Back to Sprints</span>
             </Button>
-            <h1 className="text-xl font-semibold text-gray-900">Sprint Planning</h1>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Sprint Planning</h1>
+              <p className="text-sm text-gray-600 mt-1 hidden sm:block">Plan and organize your sprint backlog</p>
+            </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4 lg:space-x-6">
             {/* Project Selector */}
-            <div className="min-w-0 flex-1">
+            <div className="w-full sm:min-w-[200px] lg:min-w-[250px]">
               <select
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 bg-white hover:border-gray-400"
               >
                 <option value="">Select Project...</option>
                 {projects.map((project) => (
@@ -501,26 +523,39 @@ const JiraSprintPlanningPage = () => {
             </div>
 
             {/* Search */}
-            <div className="min-w-0 flex-1">
-              <Input
-                id="search-issues"
-                name="searchIssues"
-                placeholder="Search issues..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="w-full sm:min-w-[200px] lg:min-w-[250px]">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <Input
+                  id="search-issues"
+                  name="searchIssues"
+                  placeholder="Search issues..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-gray-50">
         {!selectedProject ? (
           <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a project</h3>
-              <p className="text-gray-600">Choose a project to start sprint planning.</p>
+            <div className="text-center bg-white p-12 rounded-xl shadow-sm border">
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Select a project</h3>
+              <p className="text-gray-600 max-w-md">Choose a project from the dropdown above to start planning your sprint and organizing your backlog.</p>
             </div>
           </div>
         ) : (
@@ -530,69 +565,84 @@ const JiraSprintPlanningPage = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Sprint Sections */}
               {sprints.map((sprint) => (
-                <div key={sprint.id} className="bg-white rounded-lg border">
-                  <div className="px-6 py-4 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <button className="text-gray-400 hover:text-gray-600">
+                <div key={sprint.id} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-150">
+                  <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200">
+                    <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                      <div className="flex items-center space-x-4">
+                        <button className="text-gray-400 hover:text-gray-600 transition-colors duration-150">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
                         </button>
-                        <h2 className="text-lg font-medium text-gray-900">{sprint.name}</h2>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          sprint.status === 'Active' ? 'bg-green-100 text-green-800' :
-                          sprint.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {sprint.status}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
+                            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{sprint.name}</h2>
+                            <span className={`inline-flex px-3 py-1.5 text-xs font-semibold rounded-full mt-2 sm:mt-0 ${
+                              sprint.status === 'Active' ? 'bg-green-100 text-green-800' :
+                              sprint.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {sprint.status}
+                            </span>
+                          </div>
+                          {sprint.goal && (
+                            <p className="text-sm text-gray-600 mt-1 truncate">{sprint.goal}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-500">
-                          {sprint.issues?.length || 0} issues
-                        </span>
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                        <div className="text-left sm:text-right">
+                          <span className="text-sm font-medium text-gray-900">
+                            {sprint.issues?.length || 0} issues
+                          </span>
+                          {sprint.issues?.length > 0 && (
+                            <p className="text-xs text-gray-500">
+                              {sprint.issues.reduce((sum, issue) => sum + (issue.story_points || 0), 0)} story points
+                            </p>
+                          )}
+                        </div>
                         {sprint.status === 'Planning' && (
                           <Button
                             size="sm"
                             onClick={() => handleStartSprint(sprint.id)}
                             disabled={!sprint.issues || sprint.issues.length === 0}
+                            className="transition-all duration-150 w-full sm:w-auto"
                           >
                             Start Sprint
                           </Button>
                         )}
                       </div>
                     </div>
-                    {sprint.goal && (
-                      <p className="text-sm text-gray-600 mt-2">{sprint.goal}</p>
-                    )}
                   </div>
 
                   {/* Sprint Issues */}
-                  <SortableContext
-                    items={sprint.issues?.map(issue => issue.id.toString()) || []}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div
-                      id={`sprint-${sprint.id}`}
-                      className="p-6 min-h-[100px] bg-gray-50"
-                    >
-                      {sprint.issues && sprint.issues.length > 0 ? (
-                        <div className="space-y-3">
+                  <DroppableSprintArea sprint={sprint}>
+                    {sprint.issues && sprint.issues.length > 0 ? (
+                      <SortableContext
+                        items={sprint.issues.map(issue => issue.id.toString())}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-4">
                           {sprint.issues.map((issue) => (
                             <DraggableIssueCard key={issue.id} issue={issue} />
                           ))}
                         </div>
-                      ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <p>Plan a sprint by dragging work items into it, or by dragging the sprint footer.</p>
+                      </SortableContext>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
                         </div>
-                      )}
-                    </div>
-                  </SortableContext>
+                        <p className="text-gray-500 font-medium">Drop issues here to plan your sprint</p>
+                        <p className="text-sm text-gray-400 mt-1">Drag work items from the backlog below</p>
+                      </div>
+                    )}
+                  </DroppableSprintArea>
                 </div>
               ))}
 
@@ -616,23 +666,30 @@ const JiraSprintPlanningPage = () => {
               )}
 
               {/* Backlog Section */}
-              <div className="bg-white rounded-lg border">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <button className="text-gray-400 hover:text-gray-600">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200">
+                  <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                    <div className="flex items-center space-x-4">
+                      <button className="text-gray-400 hover:text-gray-600 transition-colors duration-150">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
-                      <h2 className="text-lg font-medium text-gray-900">Backlog</h2>
-                      <span className="text-sm text-gray-500">
-                        {backlogIssues.length} issues
-                      </span>
+                      <div>
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Backlog</h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {backlogIssues.length} issues • {backlogIssues.reduce((sum, issue) => sum + (issue.story_points || 0), 0)} story points
+                        </p>
+                      </div>
                     </div>
-                    <Button onClick={() => setShowCreateIssueModal(true)}>
-                      Create Issue
-                    </Button>
+                    <div className="flex items-center space-x-3">
+                      <Button
+                        onClick={() => setShowCreateIssueModal(true)}
+                        className="transition-all duration-150"
+                      >
+                        Create Issue
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -641,17 +698,17 @@ const JiraSprintPlanningPage = () => {
                   items={backlogIssues.map(issue => issue.id.toString())}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 rounded-b-xl">
                     {loading ? (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {[...Array(5)].map((_, index) => (
                           <div key={index} className="animate-pulse">
-                            <div className="h-16 bg-gray-200 rounded-lg"></div>
+                            <div className="h-20 bg-gray-200 rounded-lg"></div>
                           </div>
                         ))}
                       </div>
                     ) : backlogIssues.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {backlogIssues
                           .filter(issue =>
                             !searchTerm ||
@@ -663,14 +720,19 @@ const JiraSprintPlanningPage = () => {
                           ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No issues in backlog</h3>
-                        <p className="text-gray-600 mb-4">Create your first issue to get started.</p>
-                        <Button onClick={() => setShowCreateIssueModal(true)}>
-                          Create Issue
+                      <div className="text-center py-16">
+                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-3">No issues in backlog</h3>
+                        <p className="text-gray-600 mb-6 max-w-md mx-auto">Create your first issue to start planning your sprint and organizing your work.</p>
+                        <Button
+                          onClick={() => setShowCreateIssueModal(true)}
+                          className="transition-all duration-150"
+                        >
+                          Create First Issue
                         </Button>
                       </div>
                     )}

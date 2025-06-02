@@ -9,7 +9,6 @@ import Register from '../pages/auth/Register';
 import Dashboard from '../pages/Dashboard';
 import ProjectsListPage from '../pages/projects/ProjectsListPage';
 import SprintsListPage from '../pages/sprints/SprintsListPage';
-import SprintPlanningPage from '../pages/sprints/SprintPlanningPage';
 import JiraSprintPlanningPage from '../pages/sprints/JiraSprintPlanningPage';
 import ProjectDetailPage from '../pages/projects/ProjectDetailPage';
 import ProjectSettingsPage from '../pages/projects/ProjectSettingsPage';
@@ -95,7 +94,7 @@ export const routes = [
               },
               {
                 path: '/sprints/new',
-                element: <SprintPlanningPage />,
+                element: <JiraSprintPlanningPage />,
               },
               {
                 path: '/profile',
