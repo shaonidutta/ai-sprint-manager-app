@@ -30,6 +30,7 @@ export const api = {
     create: (data) => axiosInstance.post(API_ENDPOINTS.PROJECTS.CREATE, data),
     update: (id, data) => axiosInstance.put(API_ENDPOINTS.PROJECTS.UPDATE(id), data),
     delete: (id) => axiosInstance.delete(API_ENDPOINTS.PROJECTS.DELETE(id)),
+    getStats: (id) => axiosInstance.get(API_ENDPOINTS.PROJECTS.STATS(id)),
 
     // Team member management methods
     getTeamMembers: (projectId) => axiosInstance.get(API_ENDPOINTS.PROJECTS.MEMBERS.LIST(projectId)),

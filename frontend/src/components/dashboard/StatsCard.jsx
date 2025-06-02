@@ -68,11 +68,11 @@ const StatsCard = ({ title, value, icon, color = 'primary', trend, loading = fal
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-150 hover:scale-[1.02]">
       <div className="p-6">
-        <div className="flex items-center">
+        <div className="flex items-center justify-between">
           {/* Icon */}
-          <div className={`flex-shrink-0 w-12 h-12 ${colorClasses.bg} rounded-lg flex items-center justify-center`}>
+          <div className={`flex-shrink-0 w-12 h-12 ${colorClasses.bg} rounded-xl flex items-center justify-center`}>
             {loading ? (
               <div className="animate-pulse w-6 h-6 bg-gray-300 rounded"></div>
             ) : (
@@ -81,48 +81,44 @@ const StatsCard = ({ title, value, icon, color = 'primary', trend, loading = fal
               </div>
             )}
           </div>
-          
-          {/* Content */}
-          <div className="ml-4 flex-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-neutral-600 mb-1">
-                  {title}
-                </p>
-                <div className="flex items-center space-x-2">
-                  {loading ? (
-                    <div className="animate-pulse h-8 w-16 bg-gray-300 rounded"></div>
-                  ) : (
-                    <p className="text-2xl font-bold text-neutral-900">
-                      {formatValue(value)}
-                    </p>
-                  )}
-                  {trend && !loading && (
-                    <div className="flex items-center space-x-1">
-                      {getTrendIcon()}
-                      <span className={`text-sm font-medium ${
-                        trend.direction === 'up' ? 'text-green-600' : 
-                        trend.direction === 'down' ? 'text-red-600' : 
-                        'text-neutral-600'
-                      }`}>
-                        {trend.percentage}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+
+          {/* Trend Icon */}
+          {trend && !loading && (
+            <div className="flex items-center space-x-1">
+              {getTrendIcon()}
+              <span className={`text-sm font-semibold ${
+                trend.direction === 'up' ? 'text-green-600' :
+                trend.direction === 'down' ? 'text-red-600' :
+                'text-gray-600'
+              }`}>
+                {trend.percentage}%
+              </span>
             </div>
-            
-            {/* Trend Description */}
-            {trend && !loading && (
-              <p className="text-xs text-neutral-500 mt-1">
-                {trend.description || `${trend.direction === 'up' ? 'Increase' : 'Decrease'} from last period`}
-              </p>
-            )}
-          </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="mt-4">
+          <p className="text-sm font-medium text-gray-600 mb-2">
+            {title}
+          </p>
+          {loading ? (
+            <div className="animate-pulse h-8 w-20 bg-gray-300 rounded"></div>
+          ) : (
+            <p className="text-3xl font-bold text-gray-900">
+              {formatValue(value)}
+            </p>
+          )}
+
+          {/* Trend Description */}
+          {trend && !loading && (
+            <p className="text-xs text-gray-500 mt-2">
+              {trend.description || `${trend.direction === 'up' ? 'Increase' : 'Decrease'} from last period`}
+            </p>
+          )}
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

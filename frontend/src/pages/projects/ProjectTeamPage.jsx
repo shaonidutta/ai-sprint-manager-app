@@ -247,36 +247,34 @@ const ProjectTeamPage = () => {
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(member.role)}`}>
-                    {member.role}
-                  </span>
-
-                  {shouldShowRoleDropdown() ? (
+                  {shouldShowRoleDropdown() && member.role !== 'Admin' ? (
                     <select
                       value={member.role}
                       onChange={(e) => handleUpdateRole(member.id, e.target.value)}
                       disabled={saving}
-                      className="text-sm border border-neutral-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="text-sm border border-neutral-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
                     >
                       <option value="Developer">Developer</option>
                       <option value="Project Manager">Project Manager</option>
                       <option value="Admin">Admin</option>
                     </select>
                   ) : (
-                    <span className={`px-3 py-1 text-xs font-medium rounded-md ${getRoleColor(member.role)} border`}>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${getRoleColor(member.role)}`}>
                       {member.role}
                     </span>
                   )}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemoveMember(member.id)}
-                    disabled={saving}
-                    className="text-error-600 hover:text-error-700 hover:bg-error-50"
-                  >
-                    Remove
-                  </Button>
+                  {member.role !== 'Admin' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveMember(member.id)}
+                      disabled={saving}
+                      className="text-error-600 hover:text-error-700 hover:bg-error-50"
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

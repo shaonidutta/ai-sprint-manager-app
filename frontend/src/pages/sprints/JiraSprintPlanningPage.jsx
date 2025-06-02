@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Button, Input, BlockedBadge, Select } from '../../components/common';
+import { Button, Input, BlockedBadge } from '../../components/common';
 import { CreateIssueModal, IssueDetailModal } from '../../components/issues';
 import { useSprintPlanning } from '../../context/SprintPlanningContext';
 import { api } from '../../api';
@@ -276,15 +276,7 @@ const DroppableSprintArea = ({ sprint, children }) => {
 
   const isActive = sprint.status === 'Active';
 
-  // Debug logging for drop area
-  React.useEffect(() => {
-    console.log('🎯 DroppableSprintArea registered:', {
-      sprintId: sprint.id,
-      sprintName: sprint.name,
-      dropId: `sprint-${sprint.id}`,
-      isOver
-    });
-  }, [sprint.id, sprint.name, isOver]);
+
 
   return (
     <div
@@ -350,13 +342,7 @@ const DroppableBacklogArea = ({ children }) => {
     }
   });
 
-  // Debug logging for backlog drop area
-  React.useEffect(() => {
-    console.log('🎯 DroppableBacklogArea registered:', {
-      dropId: 'backlog',
-      isOver
-    });
-  }, [isOver]);
+
 
   return (
     <div
@@ -551,15 +537,12 @@ const SprintModal = ({ isOpen, onClose, boardId, onSprintCreated }) => {
 };
 
 const JiraSprintPlanningPage = () => {
-  // console.log('🎯 JiraSprintPlanningPage component mounting...'); // Disabled for drag-drop debugging
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const projectId = searchParams.get('project');
 
-  // console.log('🎯 About to call useSprintPlanning...'); // Disabled for drag-drop debugging
   // Use Sprint Planning Context
   const { state, actions, apiActions } = useSprintPlanning();
-  // console.log('🎯 useSprintPlanning successful, got context:', { state, actions, apiActions }); // Disabled for drag-drop debugging
   const {
     loading,
     projects,
@@ -596,37 +579,18 @@ const JiraSprintPlanningPage = () => {
 
   // Handle drag and drop
   const handleDragStart = (event) => {
-    console.log('🚀 DRAG START:', {
-      activeId: event.active.id,
-      activeData: event.active.data.current
-    });
     setActiveId(event.active.id);
   };
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
 
-    console.log('🎯 DRAG END EVENT:', {
-      active: {
-        id: active?.id,
-        data: active?.data?.current
-      },
-      over: {
-        id: over?.id,
-        data: over?.data?.current
-      },
-      currentState: {
-        sprintsCount: sprints.length,
-        backlogCount: backlogIssues.length,
-        sprintIssues: sprints.map(s => ({ id: s.id, name: s.name, issueCount: s.issues?.length || 0 }))
-      }
-    });
+
 
     // Always reset active ID first to prevent UI issues
     setActiveId(null);
 
     if (!over) {
-      console.log('❌ Drag ended without valid drop target');
       return;
     }
 
@@ -636,12 +600,7 @@ const JiraSprintPlanningPage = () => {
     const activeId = active.id;
     const overId = over.id;
 
-    console.log('🔍 PROCESSING DROP:', {
-      activeId,
-      overId,
-      backlogIssuesCount: backlogIssues.length,
-      sprintsCount: sprints.length
-    });
+
 
     // Find the active issue from backlog or any sprint
     let activeIssue = backlogIssues.find(issue => issue?.id?.toString() === activeId);
@@ -679,11 +638,11 @@ const JiraSprintPlanningPage = () => {
       return;
     }
 
-    console.log('✅ ACTIVE ISSUE FOUND:', {
-      issueId: activeIssue.id,
-      issueTitle: activeIssue.title,
-      sourceSprintId
-    });
+    // console.log('✅ ACTIVE ISSUE FOUND:', {
+    //   issueId: activeIssue.id,
+    //   issueTitle: activeIssue.title,
+    //   sourceSprintId
+    // });
 
     // Handle dropping on sprint
     if (overId.startsWith('sprint-')) {
@@ -697,42 +656,42 @@ const JiraSprintPlanningPage = () => {
 
       // Don't move if it's the same sprint
       if (sourceSprintId === targetSprintId) {
-        console.log('⚠️ Same sprint, skipping move');
+       // console.log('⚠️ Same sprint, skipping move');
         setDragLoading(false);
         return;
       }
 
       try {
-        console.log('🔄 UPDATING ISSUE API CALL:', {
-          issueId: activeIssue.id,
-          newSprintId: targetSprintId
-        });
+        // console.log('🔄 UPDATING ISSUE API CALL:', {
+        //   issueId: activeIssue.id,
+        //   newSprintId: targetSprintId
+        // });
 
         // Update issue to assign it to the target sprint
-        const updateResponse = await api.issues.update(activeIssue.id, { sprint_id: targetSprintId });
+        await api.issues.update(activeIssue.id, { sprint_id: targetSprintId });
 
-        console.log('✅ API UPDATE SUCCESS:', updateResponse);
+        //console.log('✅ API UPDATE SUCCESS:', updateResponse);
 
         // Use context actions instead of local state setters
         if (sourceSprintId) {
           // Moving from sprint to sprint
-          console.log('🔄 Moving from sprint to sprint via context');
+          //console.log('🔄 Moving from sprint to sprint via context');
           actions.moveIssueToSprint(activeIssue.id, targetSprintId, sourceSprintId);
         } else {
           // Moving from backlog to sprint
-          console.log('🔄 Moving from backlog to sprint via context');
+          //console.log('🔄 Moving from backlog to sprint via context');
           actions.moveIssueToSprint(activeIssue.id, targetSprintId);
         }
 
-        console.log(`✅ Successfully moved issue ${activeIssue.id} to sprint ${targetSprintId}`);
+        //console.log(`✅ Successfully moved issue ${activeIssue.id} to sprint ${targetSprintId}`);
 
         // Verify the move by refreshing data from backend
-        console.log('🔄 Refreshing data from backend...');
+        //console.log('🔄 Refreshing data from backend...');
         await apiActions.refreshAllData(selectedBoard);
-        console.log('✅ Data refresh complete');
+        //console.log('✅ Data refresh complete');
 
       } catch (err) {
-        console.error('❌ Failed to move issue to sprint:', err);
+        //console.error('❌ Failed to move issue to sprint:', err);
         alert('Failed to move issue to sprint. Please try again.');
 
         // Revert optimistic updates and refresh from backend
@@ -749,7 +708,7 @@ const JiraSprintPlanningPage = () => {
 
       // Only allow moving from sprint to backlog
       if (!sourceSprintId) {
-        console.log('⚠️ No source sprint, skipping backlog move');
+        //console.log('⚠️ No source sprint, skipping backlog move');
         setDragLoading(false);
         return;
       }
@@ -757,15 +716,15 @@ const JiraSprintPlanningPage = () => {
       // Find the source sprint to check if it's active
       const sourceSprint = sprints.find(sprint => sprint.id === sourceSprintId);
 
-      console.log('🔍 Drop to backlog - Source sprint:', {
-        sprintName: sourceSprint?.name,
-        sprintStatus: sourceSprint?.status,
-        isActive: sourceSprint?.status === 'Active'
-      });
+      // console.log('🔍 Drop to backlog - Source sprint:', {
+      //   sprintName: sourceSprint?.name,
+      //   sprintStatus: sourceSprint?.status,
+      //   isActive: sourceSprint?.status === 'Active'
+      // });
 
       // Prevent moving issues from active sprints to backlog
       if (sourceSprint && sourceSprint.status === 'Active') {
-        console.log('🚫 Cannot move issue from active sprint to backlog');
+        //console.log('🚫 Cannot move issue from active sprint to backlog');
         alert('Cannot move issues from an active sprint back to backlog. Complete the sprint first.');
         setDragLoading(false);
         return;
@@ -886,42 +845,44 @@ const JiraSprintPlanningPage = () => {
               </div>
             </div>
             <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4 lg:space-x-6">
-              {/* Enhanced Project Selector */}
-              <div className="w-full sm:min-w-[200px] lg:min-w-[250px]">
-                <Select
-                  id="project-selector"
-                  name="projectSelector"
-                  value={selectedProject}
-                  onChange={(e) => actions.setSelectedProject(e.target.value)}
-                  options={[
-                    { value: '', label: 'Select Project...' },
-                    ...projects.map((project) => ({
-                      value: project.id,
-                      label: `${project.name} (${project.project_key})`
-                    }))
-                  ]}
-                  placeholder="Select Project..."
-                  className="transition-all duration-150 hover:shadow-sm"
-                  size="medium"
-                  fullWidth
-                />
+              {/* Custom Project Selector */}
+              <div className="w-full sm:min-w-[200px] lg:min-w-[280px]">
+                <div className="relative">
+                  <select
+                    value={selectedProject}
+                    onChange={(e) => actions.setSelectedProject(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-all duration-150 appearance-none cursor-pointer"
+                  >
+                    <option value="">Choose a project...</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name} ({project.project_key})
+                      </option>
+                    ))}
+                  </select>
+                  {/* Custom dropdown arrow */}
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
               {/* Enhanced Search */}
-              <div className="w-full sm:min-w-[200px] lg:min-w-[250px]">
+              <div className="w-full sm:min-w-[200px] lg:min-w-[280px]">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <Input
-                    id="search-issues"
-                    name="searchIssues"
+                  <input
+                    type="text"
                     placeholder="Search issues..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 transition-all duration-150 hover:shadow-sm focus:shadow-md"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-all duration-150"
                   />
                 </div>
               </div>
