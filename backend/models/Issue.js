@@ -210,34 +210,41 @@ class Issue {
       
       const issueData = rows[0];
       const issue = new Issue(issueData);
-      
+
+      // Add issue key
+      issue.issue_key = `${issueData.project_key}-${issueData.id}`;
+
       // Add additional properties
       issue.board = {
         id: issueData.board_id,
         name: issueData.board_name,
         projectId: issueData.project_id
       };
-      
+
       issue.project = {
         id: issueData.project_id,
         name: issueData.project_name,
         key: issueData.project_key
       };
-      
+
       issue.assignee = issueData.assignee_id ? {
         id: issueData.assignee_id,
-        firstName: issueData.assignee_first_name,
-        lastName: issueData.assignee_last_name,
+        first_name: issueData.assignee_first_name,
+        last_name: issueData.assignee_last_name,
         email: issueData.assignee_email
       } : null;
-      
+
+      // Add assignee_name for frontend compatibility
+      issue.assignee_name = issueData.assignee_id ?
+        `${issueData.assignee_first_name} ${issueData.assignee_last_name}` : null;
+
       issue.reporter = {
         id: issueData.reporter_id,
-        firstName: issueData.reporter_first_name,
-        lastName: issueData.reporter_last_name,
+        first_name: issueData.reporter_first_name,
+        last_name: issueData.reporter_last_name,
         email: issueData.reporter_email
       };
-      
+
       issue.sprint = issueData.sprint_id ? {
         id: issueData.sprint_id,
         name: issueData.sprint_name,
@@ -352,6 +359,11 @@ class Issue {
           first_name: row.assignee_first_name,
           last_name: row.assignee_last_name
         } : null;
+
+        // Add assignee_name for frontend compatibility
+        issue.assignee_name = row.assignee_id ?
+          `${row.assignee_first_name} ${row.assignee_last_name}` : null;
+
         issue.reporter = {
           id: row.reporter_id,
           first_name: row.reporter_first_name,

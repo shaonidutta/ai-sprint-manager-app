@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { Button, Input, SprintFlowIcon, EyeIcon, EyeOffIcon } from '../../components/common';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,9 @@ const Register = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { register, error } = useAuth();
   const navigate = useNavigate();
 
@@ -60,6 +64,10 @@ const Register = () => {
       errors.confirmPassword = 'Passwords do not match';
     }
 
+    if (!agreedToTerms) {
+      errors.terms = 'You must agree to the Terms of Service and Privacy Policy';
+    }
+
     return errors;
   };
 
@@ -97,180 +105,222 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <img
-          className="mx-auto h-12 w-auto"
-          src="/logo.svg"
-          alt="Sprint Manager"
-        />
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create your account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link to="/login" className="font-medium text-[#0052CC] hover:text-[#0747A6]">
-            sign in to your existing account
-          </Link>
-        </p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-neutral-200 p-8">
+        {/* Logo and Header */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <SprintFlowIcon size={48} />
+          </div>
+          <h1 className="text-2xl font-semibold text-neutral-800 mb-2">
+            Create your account
+          </h1>
+          <p className="text-sm text-neutral-600">
+            Join SprintFlow to manage your projects efficiently
+          </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 rounded-md p-4 text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-                  First name
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="first_name"
-                    name="first_name"
-                    type="text"
-                    autoComplete="given-name"
-                    required
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    className={`appearance-none block w-full px-3 py-2 border ${
-                      validationErrors.first_name ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#0052CC] focus:border-[#0052CC] sm:text-sm`}
-                  />
-                  {validationErrors.first_name && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.first_name}</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
-                  Last name
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="last_name"
-                    name="last_name"
-                    type="text"
-                    autoComplete="family-name"
-                    required
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    className={`appearance-none block w-full px-3 py-2 border ${
-                      validationErrors.last_name ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#0052CC] focus:border-[#0052CC] sm:text-sm`}
-                  />
-                  {validationErrors.last_name && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.last_name}</p>
-                  )}
-                </div>
-              </div>
+        {/* Registration Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-error-50 border border-error-200 rounded-md p-3">
+              <p className="text-sm text-error-600">{error}</p>
             </div>
+          )}
 
+          {/* Name Fields */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+              <label htmlFor="first_name" className="block text-sm font-medium text-neutral-700 mb-1">
+                First name
               </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    validationErrors.email ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#0052CC] focus:border-[#0052CC] sm:text-sm`}
-                />
-                {validationErrors.email && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
-                )}
-              </div>
+              <Input
+                id="first_name"
+                name="first_name"
+                type="text"
+                autoComplete="given-name"
+                required
+                placeholder="First name"
+                value={formData.first_name}
+                onChange={handleChange}
+                error={validationErrors.first_name}
+                fullWidth
+              />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+              <label htmlFor="last_name" className="block text-sm font-medium text-neutral-700 mb-1">
+                Last name
               </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    validationErrors.password ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#0052CC] focus:border-[#0052CC] sm:text-sm`}
-                />
-                {validationErrors.password && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    validationErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#0052CC] focus:border-[#0052CC] sm:text-sm`}
-                />
-                {validationErrors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0052CC] hover:bg-[#0747A6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0052CC] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Creating account...' : 'Create account'}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Already have an account?</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                to="/login"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0052CC]"
-              >
-                Sign in instead
-              </Link>
+              <Input
+                id="last_name"
+                name="last_name"
+                type="text"
+                autoComplete="family-name"
+                required
+                placeholder="Last name"
+                value={formData.last_name}
+                onChange={handleChange}
+                error={validationErrors.last_name}
+                fullWidth
+              />
             </div>
           </div>
+
+          {/* Email Field */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-1">
+              Email
+            </label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              error={validationErrors.email}
+              fullWidth
+            />
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-neutral-700 mb-1">
+              Password
+            </label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                required
+                placeholder="Create a password"
+                value={formData.password}
+                onChange={handleChange}
+                error={validationErrors.password}
+                className="pr-10"
+                fullWidth
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="h-4 w-4 text-neutral-400 hover:text-neutral-600" />
+                ) : (
+                  <EyeIcon className="h-4 w-4 text-neutral-400 hover:text-neutral-600" />
+                )}
+              </button>
+            </div>
+            {validationErrors.password && (
+              <div className="mt-1 text-xs text-error-600 bg-error-50 border border-error-200 rounded px-2 py-1">
+                Please fill out this field.
+              </div>
+            )}
+          </div>
+
+          {/* Confirm Password Field */}
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-700 mb-1">
+              Confirm password
+            </label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                required
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                error={validationErrors.confirmPassword}
+                className="pr-10"
+                fullWidth
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeOffIcon className="h-4 w-4 text-neutral-400 hover:text-neutral-600" />
+                ) : (
+                  <EyeIcon className="h-4 w-4 text-neutral-400 hover:text-neutral-600" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Terms and Conditions */}
+          <div className="flex items-start">
+            <input
+              id="terms"
+              name="terms"
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded"
+            />
+            <label htmlFor="terms" className="ml-2 text-sm text-neutral-600">
+              I agree to the{' '}
+              <a href="#" className="text-primary-600 hover:text-primary-500 transition-colors duration-150">
+                Terms of Service
+              </a>{' '}
+              and{' '}
+              <a href="#" className="text-primary-600 hover:text-primary-500 transition-colors duration-150">
+                Privacy Policy
+              </a>
+            </label>
+          </div>
+
+          {/* Terms Error */}
+          {validationErrors.terms && (
+            <div className="text-sm text-error-600">
+              {validationErrors.terms}
+            </div>
+          )}
+
+          {/* Create Account Button */}
+          <Button
+            type="submit"
+            className="w-full bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            disabled={isSubmitting}
+            fullWidth
+          >
+            {isSubmitting ? 'Creating account...' : 'Create account'}
+          </Button>
+
+          {/* Login Link */}
+          <div className="text-center pt-4 border-t border-neutral-200">
+            <p className="text-sm text-neutral-600">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-150"
+              >
+                Log in to SprintFlow
+              </Link>
+            </p>
+          </div>
+        </form>
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <div className="flex justify-center space-x-6 text-xs text-neutral-500">
+            <a href="#" className="hover:text-neutral-700 transition-colors duration-150">Privacy Policy</a>
+            <a href="#" className="hover:text-neutral-700 transition-colors duration-150">Terms of Service</a>
+            <a href="#" className="hover:text-neutral-700 transition-colors duration-150">Support</a>
+          </div>
+          <p className="mt-2 text-xs text-neutral-400">
+            © 2024 SprintFlow. All rights reserved.
+          </p>
         </div>
       </div>
     </div>

@@ -12,3 +12,4 @@ export { default as Tabs } from './Tabs';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as UserDropdown } from './UserDropdown';
 export { default as BlockedBadge } from './BlockedBadge';
+export * from './Icons';
