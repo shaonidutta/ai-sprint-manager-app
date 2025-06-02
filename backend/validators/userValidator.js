@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const logger = require('../config/logger');
 
 // User registration validation schema
 const registerSchema = Joi.object({
@@ -224,7 +225,16 @@ const otpVerificationSchema = Joi.object({
 
 // Validation middleware factory
 const validateRequest = (schema) => {
+  logger.debug(`[validateRequest Factory] Called. Is 'schema' a function (likely req)? ${typeof schema === 'function'}. Path if so: ${typeof schema === 'function' ? schema.path : 'N/A'}`);
   return (req, res, next) => {
+    logger.debug(`[validateRequest Middleware] Executing for path: ${req.path}. Schema type: ${typeof schema}`);
+    // If schema is not a Joi object (because the factory was misused), this will fail.
+    if (!schema || typeof schema.validate !== 'function') {
+      logger.error(`[validateRequest Middleware] Invalid schema or schema.validate is not a function. Schema type: ${typeof schema}. This indicates misuse of the validateRequest factory.`);
+      // Potentially call next(new Error(...)) or just next() if we want to see if it reaches controller
+      // For now, let it proceed to the original error point or hang to observe behavior.
+    }
+
     const { error, value } = schema.validate(req.body, {
       abortEarly: false, // Return all validation errors
       stripUnknown: true // Remove unknown fields

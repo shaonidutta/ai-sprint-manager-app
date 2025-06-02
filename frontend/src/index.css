@@ -2,6 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom animations for Scope Creep Detector */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.4s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Enhanced hover effects */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Gradient backgrounds */
+.gradient-bg-success {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.gradient-bg-warning {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.gradient-bg-danger {
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+}
+
+.gradient-bg-info {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
 /* Atlassian Design System Base Styles */
 @layer base {
   * {
@@ -106,6 +177,15 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+
+  /* Smooth hover transitions for AI components */
+  .ai-card-hover {
+    @apply transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105;
+  }
+
+  .ai-button-hover {
+    @apply transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl;
   }
 
   /* Enhanced Form Styles */

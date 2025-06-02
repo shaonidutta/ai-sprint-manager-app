@@ -4,3 +4,4 @@ export { default as SprintPlanningAI } from './SprintPlanningAI';
 export { default as ScopeCreepDetection } from './ScopeCreepDetection';
 export { default as RiskAssessment } from './RiskAssessment';
 export { default as RetrospectiveAI } from './RetrospectiveAI';
+export { default as TeamRiskHeatmap } from './TeamRiskHeatmap';

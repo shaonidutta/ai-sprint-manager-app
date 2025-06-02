@@ -7,7 +7,23 @@ const aiController = require('../controllers/aiController');
 
 // Import middleware
 const authMiddleware = require('../middleware/auth');
-const { validateRequest } = require('../validators/userValidator');
+const { validationResult } = require('express-validator');
+
+// Validation middleware
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid input data',
+        details: errors.array()
+      }
+    });
+  }
+  next();
+};
 
 // Validation schemas
 const projectIdSchema = param('projectId')
@@ -73,6 +89,77 @@ const retrospectiveSchema = [
     .withMessage('Metrics must be an object')
 ];
 
+const sprintCreationSchema = [
+  body('boardId')
+    .isInt({ min: 1 })
+    .withMessage('Board ID must be a positive integer'),
+  body('startDate')
+    .isISO8601()
+    .withMessage('Start date must be a valid ISO 8601 date'),
+  body('endDate')
+    .isISO8601()
+    .withMessage('End date must be a valid ISO 8601 date'),
+  body('totalStoryPoints')
+    .isInt({ min: 1, max: 500 })
+    .withMessage('Total story points must be between 1 and 500'),
+  body('tasksList')
+    .isArray({ min: 1 })
+    .withMessage('Tasks list must be a non-empty array'),
+  body('tasksList.*')
+    .isString()
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Each task must be a string between 1 and 500 characters')
+];
+
+const sprintPlanDataSchema = [
+  body('name')
+    .isString()
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Sprint name must be between 1 and 255 characters'),
+  body('goal')
+    .isString()
+    .isLength({ min: 1, max: 1000 })
+    .withMessage('Sprint goal must be between 1 and 1000 characters'),
+  body('start_date')
+    .isISO8601()
+    .withMessage('Start date must be a valid ISO 8601 date'),
+  body('end_date')
+    .isISO8601()
+    .withMessage('End date must be a valid ISO 8601 date'),
+  body('capacity_story_points')
+    .isInt({ min: 1 })
+    .withMessage('Capacity story points must be a positive integer'),
+  body('status')
+    .isIn(['Planning', 'Active', 'Completed'])
+    .withMessage('Status must be Planning, Active, or Completed'),
+  body('issues')
+    .isArray()
+    .withMessage('Issues must be an array'),
+  body('issues.*.title')
+    .isString()
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Issue title must be between 1 and 500 characters'),
+  body('issues.*.description')
+    .optional()
+    .isString()
+    .isLength({ max: 2000 })
+    .withMessage('Issue description must be max 2000 characters'),
+  body('issues.*.issue_type')
+    .isIn(['Story', 'Bug', 'Task', 'Epic'])
+    .withMessage('Issue type must be Story, Bug, Task, or Epic'),
+  body('issues.*.priority')
+    .isIn(['P1', 'P2', 'P3', 'P4'])
+    .withMessage('Priority must be P1, P2, P3, or P4'),
+  body('issues.*.story_points')
+    .optional()
+    .isInt({ min: 0, max: 21 })
+    .withMessage('Story points must be between 0 and 21'),
+  body('issues.*.original_estimate')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Original estimate must be a non-negative integer')
+];
+
 // Rate limiting middleware for AI endpoints
 const aiRateLimit = (req, res, next) => {
   // Add rate limiting logic here if needed
@@ -88,7 +175,7 @@ const aiRateLimit = (req, res, next) => {
 router.get('/projects/:projectId/quota',
   authMiddleware.authenticate,
   projectIdSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.getQuotaStatus
 );
 
@@ -102,7 +189,7 @@ router.post('/projects/:projectId/sprint-plan',
   aiRateLimit,
   projectIdSchema,
   sprintPlanSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.generateSprintPlan
 );
 
@@ -116,7 +203,7 @@ router.post('/projects/:projectId/scope-creep',
   aiRateLimit,
   projectIdSchema,
   scopeCreepSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.detectScopeCreep
 );
 
@@ -129,7 +216,7 @@ router.post('/projects/:projectId/risk-assessment',
   authMiddleware.authenticate,
   aiRateLimit,
   projectIdSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.assessRisks
 );
 
@@ -143,8 +230,35 @@ router.post('/projects/:projectId/retrospective',
   aiRateLimit,
   projectIdSchema,
   retrospectiveSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.generateRetrospectiveInsights
+);
+
+/**
+ * @route   POST /api/v1/ai/projects/:projectId/generate-sprint-plan
+ * @desc    Generate AI-powered sprint creation plan from tasks list
+ * @access  Private
+ */
+router.post('/projects/:projectId/generate-sprint-plan',
+  authMiddleware.authenticate,
+  aiRateLimit,
+  projectIdSchema,
+  sprintCreationSchema,
+  handleValidationErrors,
+  aiController.generateSprintCreationPlan
+);
+
+/**
+ * @route   POST /api/v1/ai/projects/:projectId/create-sprint
+ * @desc    Create sprint and issues from AI-generated plan
+ * @access  Private
+ */
+router.post('/projects/:projectId/create-sprint',
+  authMiddleware.authenticate,
+  projectIdSchema,
+  sprintPlanDataSchema,
+  handleValidationErrors,
+  aiController.createSprintFromPlan
 );
 
 module.exports = router;

@@ -1,14 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SprintPlanningAI } from '../../components/ai';
+import { boardService } from '../../services/board/boardService';
 
 const SprintPlanningPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [planResult, setPlanResult] = useState(null);
+  const [selectedBoardId, setSelectedBoardId] = useState(null);
+  const [boardLoading, setBoardLoading] = useState(true);
+  const [boardError, setBoardError] = useState(null);
+
+  useEffect(() => {
+    if (projectId) {
+      const fetchBoardData = async () => {
+        setBoardLoading(true);
+        setBoardError(null);
+        try {
+          const apiResult = await boardService.getBoards(projectId);
+          if (apiResult && apiResult.success && apiResult.data && apiResult.data.boards && apiResult.data.boards.length > 0) {
+            setSelectedBoardId(apiResult.data.boards[0].id);
+          } else {
+            let errorMsg = 'No boards found for this project.';
+            if (apiResult && !apiResult.success) {
+              errorMsg = apiResult.message || 'Failed to load board data (API error).';
+            } else if (!apiResult || !apiResult.data || !apiResult.data.boards) {
+              errorMsg = 'Unexpected response structure when fetching boards.';
+            }
+            setBoardError(errorMsg);
+          }
+        } catch (error) {
+          console.error('Failed to fetch board ID:', error);
+          setBoardError(error.message || 'Failed to fetch board information.');
+        } finally {
+          setBoardLoading(false);
+        }
+      };
+      fetchBoardData();
+    }
+  }, [projectId]);
 
   const handlePlanGenerated = (result) => {
     setPlanResult(result);
+  };
+
+  const calculateDuration = (startDateStr, endDateStr) => {
+    if (!startDateStr || !endDateStr) return 'N/A';
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'N/A';
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Add 1 for inclusive days
+    return diffDays;
   };
 
   return (
@@ -37,10 +80,18 @@ const SprintPlanningPage = () => {
         <div className="grid grid-cols-1 gap-8 max-w-[1200px] mx-auto">
           {/* Sprint Planning Form */}
           <div className="bg-white rounded-lg shadow-lg p-8">
-            <SprintPlanningAI
-              projectId={projectId}
-              onPlanGenerated={handlePlanGenerated}
-            />
+            {boardLoading && <p>Loading board information...</p>}
+            {boardError && <p className="text-red-500">Error: {boardError}</p>}
+            {!boardLoading && !boardError && selectedBoardId && (
+              <SprintPlanningAI
+                projectId={projectId}
+                boardId={selectedBoardId}
+                onPlanGenerated={handlePlanGenerated}
+              />
+            )}
+            {!boardLoading && !boardError && !selectedBoardId && (
+              <p>No board available for sprint planning.</p>
+            )}
           </div>
 
           {/* Results Section */}
@@ -53,7 +104,7 @@ const SprintPlanningPage = () => {
                   <div className="flex items-center justify-between p-6 bg-blue-50 rounded-lg">
                     <div>
                       <p className="text-sm font-medium text-blue-700">Recommended Story Points</p>
-                      <p className="text-3xl font-bold text-blue-900">{planResult.suggestedStoryPoints}</p>
+                      <p className="text-3xl font-bold text-blue-900">{planResult.sprint_plan?.capacity_story_points || 'N/A'}</p>
                     </div>
                     <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
                       <span className="text-2xl">📊</span>
@@ -63,7 +114,9 @@ const SprintPlanningPage = () => {
                   <div className="flex items-center justify-between p-6 bg-green-50 rounded-lg">
                     <div>
                       <p className="text-sm font-medium text-green-700">Suggested Duration</p>
-                      <p className="text-3xl font-bold text-green-900">{planResult.suggestedDuration} days</p>
+                      <p className="text-3xl font-bold text-green-900">
+                        {calculateDuration(planResult.sprint_plan?.start_date, planResult.sprint_plan?.end_date)} days
+                      </p>
                     </div>
                     <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center">
                       <span className="text-2xl">📅</span>

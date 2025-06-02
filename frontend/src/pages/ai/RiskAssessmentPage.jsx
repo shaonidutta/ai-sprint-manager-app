@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { aiService } from '../../services/ai/aiService';
 import SprintSelector from '../../components/ai/SprintSelector';
+import { TeamRiskHeatmap } from '../../components/ai';
 
 const RiskAssessmentPage = () => {
   const { projectId } = useParams();
@@ -9,10 +10,12 @@ const RiskAssessmentPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [assessment, setAssessment] = useState(null);
+  const [heatmapData, setHeatmapData] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState(null);
   const [options, setOptions] = useState({
     includeTeamVelocity: true,
-    includeBlockedIssues: true
+    includeBlockedIssues: true,
+    includeHeatmap: true
   });
 
   const handleAssess = async () => {
@@ -29,7 +32,12 @@ const RiskAssessmentPage = () => {
         sprintId: selectedSprint.id,
         ...options
       });
-      setAssessment(response.data.riskAssessment);
+      setAssessment(response.data.risk_assessment);
+
+      // Set heatmap data if available
+      if (response.data.heatmap_data) {
+        setHeatmapData(response.data.heatmap_data);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to perform risk assessment');
     } finally {
@@ -37,8 +45,11 @@ const RiskAssessmentPage = () => {
     }
   };
 
-  const getRiskColor = (risk) => {
-    switch (risk.toLowerCase()) {
+  const getRiskColor = (riskValue) => {
+    if (typeof riskValue !== 'string') {
+      return 'text-gray-700 bg-gray-50 border-gray-200'; // Default for undefined/invalid
+    }
+    switch (riskValue.toLowerCase()) {
       case 'critical':
         return 'text-red-700 bg-red-50 border-red-200';
       case 'high':
@@ -119,6 +130,22 @@ const RiskAssessmentPage = () => {
                       Include Blocked Issues Analysis
                     </label>
                   </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="heatmap"
+                      checked={options.includeHeatmap}
+                      onChange={(e) => setOptions(prev => ({
+                        ...prev,
+                        includeHeatmap: e.target.checked
+                      }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors duration-200"
+                    />
+                    <label htmlFor="heatmap" className="ml-3 text-gray-700">
+                      Generate Team Risk Heatmap
+                    </label>
+                  </div>
                 </div>
 
                 <button
@@ -142,28 +169,33 @@ const RiskAssessmentPage = () => {
             )}
           </div>
 
+          {/* Team Risk Heatmap - Positioned Above Risk Assessment */}
+          {heatmapData && (
+            <TeamRiskHeatmap data={heatmapData} />
+          )}
+
           {/* Results Section */}
           {assessment && (
             <div className="space-y-6">
               {/* Overall Risk */}
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Overall Risk Assessment</h2>
-                <div className={`p-6 border rounded-lg ${getRiskColor(assessment.overallRisk)}`}>
+                <div className={`p-6 border rounded-lg ${getRiskColor(assessment.overall_risk_level)}`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Risk Level</p>
-                      <p className="text-3xl font-bold mt-1">{assessment.overallRisk}</p>
+                      <p className="text-3xl font-bold mt-1">{assessment.overall_risk_level || 'N/A'}</p>
                     </div>
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center bg-opacity-20 ${
-                      assessment.overallRisk.toLowerCase() === 'critical' ? 'bg-red-600' :
-                      assessment.overallRisk.toLowerCase() === 'high' ? 'bg-orange-500' :
-                      assessment.overallRisk.toLowerCase() === 'medium' ? 'bg-yellow-500' :
-                      'bg-green-500'
+                      assessment.overall_risk_level?.toLowerCase() === 'critical' ? 'bg-red-600' :
+                      assessment.overall_risk_level?.toLowerCase() === 'high' ? 'bg-orange-500' :
+                      assessment.overall_risk_level?.toLowerCase() === 'medium' ? 'bg-yellow-500' :
+                      'bg-green-500' // Default for low or undefined
                     }`}>
                       <span className="text-2xl">
-                        {assessment.overallRisk.toLowerCase() === 'critical' ? '⚠️' :
-                         assessment.overallRisk.toLowerCase() === 'high' ? '⚡' :
-                         assessment.overallRisk.toLowerCase() === 'medium' ? '⚪' :
+                        {assessment.overall_risk_level?.toLowerCase() === 'critical' ? '⚠️' :
+                         assessment.overall_risk_level?.toLowerCase() === 'high' ? '⚡' :
+                         assessment.overall_risk_level?.toLowerCase() === 'medium' ? '⚪' :
                          '✅'}
                       </span>
                     </div>
@@ -172,75 +204,79 @@ const RiskAssessmentPage = () => {
               </div>
 
               {/* Sprint Health */}
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Sprint Health</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm font-medium text-blue-700">Completion Probability</p>
-                    <p className="text-3xl font-bold text-blue-900 mt-2">
-                      {Math.round(assessment.sprintHealth.completionProbability * 100)}%
-                    </p>
-                  </div>
-                  
-                  <div className={`p-6 border rounded-lg ${
-                    assessment.sprintHealth.velocityTrend === 'Improving' ? 'bg-green-50 border-green-200' :
-                    assessment.sprintHealth.velocityTrend === 'Declining' ? 'bg-red-50 border-red-200' :
-                    'bg-yellow-50 border-yellow-200'
-                  }`}>
-                    <p className={`text-sm font-medium ${
-                      assessment.sprintHealth.velocityTrend === 'Improving' ? 'text-green-700' :
-                      assessment.sprintHealth.velocityTrend === 'Declining' ? 'text-red-700' :
-                      'text-yellow-700'
-                    }`}>Velocity Trend</p>
-                    <p className={`text-3xl font-bold mt-2 ${
-                      assessment.sprintHealth.velocityTrend === 'Improving' ? 'text-green-900' :
-                      assessment.sprintHealth.velocityTrend === 'Declining' ? 'text-red-900' :
-                      'text-yellow-900'
+              {assessment.sprintHealth && (
+                <div className="bg-white rounded-lg shadow-lg p-8">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Sprint Health</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm font-medium text-blue-700">Completion Probability</p>
+                      <p className="text-3xl font-bold text-blue-900 mt-2">
+                        {assessment.sprintHealth.completionProbability !== undefined ? `${Math.round(assessment.sprintHealth.completionProbability * 100)}%` : 'N/A'}
+                      </p>
+                    </div>
+                    
+                    <div className={`p-6 border rounded-lg ${
+                      assessment.sprintHealth.velocityTrend === 'Improving' ? 'bg-green-50 border-green-200' :
+                      assessment.sprintHealth.velocityTrend === 'Declining' ? 'bg-red-50 border-red-200' :
+                      'bg-yellow-50 border-yellow-200' // Default for Stable or N/A
                     }`}>
-                      {assessment.sprintHealth.velocityTrend}
-                    </p>
-                  </div>
-                  
-                  <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
-                    <p className="text-sm font-medium text-purple-700">Blocked Issues</p>
-                    <p className="text-3xl font-bold text-purple-900 mt-2">
-                      {assessment.sprintHealth.blockerCount}
-                    </p>
+                      <p className={`text-sm font-medium ${
+                        assessment.sprintHealth.velocityTrend === 'Improving' ? 'text-green-700' :
+                        assessment.sprintHealth.velocityTrend === 'Declining' ? 'text-red-700' :
+                        'text-yellow-700'
+                      }`}>Velocity Trend</p>
+                      <p className={`text-3xl font-bold mt-2 ${
+                        assessment.sprintHealth.velocityTrend === 'Improving' ? 'text-green-900' :
+                        assessment.sprintHealth.velocityTrend === 'Declining' ? 'text-red-900' :
+                        'text-yellow-900'
+                      }`}>
+                        {assessment.sprintHealth.velocityTrend || 'N/A'}
+                      </p>
+                    </div>
+                    
+                    <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
+                      <p className="text-sm font-medium text-purple-700">Blocked Issues</p>
+                      <p className="text-3xl font-bold text-purple-900 mt-2">
+                        {assessment.sprintHealth.blockerCount !== undefined ? assessment.sprintHealth.blockerCount : 'N/A'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Identified Risks */}
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Identified Risks</h2>
-                <div className="space-y-4">
-                  {assessment.risks.map((risk, index) => (
-                    <div
-                      key={index}
-                      className={`p-6 border rounded-lg ${getRiskColor(risk.severity)}`}
-                    >
-                      <div className="flex items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-medium">{risk.category}</p>
-                            <span className={`px-3 py-1 text-sm rounded-full ${getRiskColor(risk.severity)}`}>
-                              {risk.severity}
-                            </span>
-                          </div>
-                          <p className="text-gray-700 mb-4">{risk.description}</p>
-                          <div className="bg-white bg-opacity-50 p-4 rounded-lg">
-                            <p className="text-sm font-medium mb-2">Suggested Mitigation:</p>
-                            <p className="text-gray-700">{risk.mitigation}</p>
+              {assessment.risks && assessment.risks.length > 0 && (
+                <div className="bg-white rounded-lg shadow-lg p-8">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Identified Risks</h2>
+                  <div className="space-y-4">
+                    {assessment.risks.map((risk, index) => (
+                      <div
+                        key={index}
+                        className={`p-6 border rounded-lg ${getRiskColor(risk.impact)}`}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="font-medium">{risk.category || 'N/A'}</p>
+                              <span className={`px-3 py-1 text-sm rounded-full ${getRiskColor(risk.impact)}`}>
+                                {risk.impact || 'N/A'}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 mb-4">{risk.description || 'No description'}</p>
+                            <div className="bg-white bg-opacity-50 p-4 rounded-lg">
+                              <p className="text-sm font-medium mb-2">Suggested Mitigation:</p>
+                              <p className="text-gray-700">{risk.mitigation}</p>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              {/* Recommendations */}
-              {assessment.recommendations && assessment.recommendations.length > 0 && (
+                )} {/* Closing parenthesis and brace for Identified Risks conditional */}
+  
+                {/* Recommendations */}
+                {assessment.recommendations && assessment.recommendations.length > 0 && (
                 <div className="bg-white rounded-lg shadow-lg p-8">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Recommendations</h2>
                   <div className="space-y-4">

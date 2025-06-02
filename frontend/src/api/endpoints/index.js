@@ -73,7 +73,9 @@ export const API_ENDPOINTS = {
     SCOPE_CREEP: (projectId) => `/ai/projects/${projectId}/scope-creep`,
     RISK_ASSESSMENT: (projectId) => `/ai/projects/${projectId}/risk-assessment`,
     RETROSPECTIVE: (projectId) => `/ai/projects/${projectId}/retrospective`,
-    QUOTA: (projectId) => `/ai/projects/${projectId}/quota`
+    QUOTA: (projectId) => `/ai/projects/${projectId}/quota`,
+    GENERATE_SPRINT_PLAN: (projectId) => `/ai/projects/${projectId}/generate-sprint-plan`,
+    CREATE_SPRINT_FROM_PLAN: (projectId) => `/ai/projects/${projectId}/create-sprint`
   },
   DASHBOARD: {
     STATS: '/dashboard/stats',
