@@ -315,8 +315,10 @@ class Board {
 
   async getIssues(options = {}) {
     try {
-      const { status, assigneeId, sprintId, page = 1, limit = 50 } = options;
+      const { status, assigneeId, sprintId, page = 1, limit = 50, backlogOnly = false } = options;
       const offset = (page - 1) * limit;
+
+      console.log('🔍 BOARD.getIssues called with options:', options);
 
       let whereClause = 'WHERE i.board_id = ?';
       let queryParams = [this.id];
@@ -336,6 +338,12 @@ class Board {
         queryParams.push(sprintId);
       }
 
+      // Add backlog filter - issues not assigned to any sprint
+      if (backlogOnly) {
+        whereClause += ' AND i.sprint_id IS NULL';
+        console.log('🔍 BACKLOG FILTER APPLIED: Adding sprint_id IS NULL filter');
+      }
+
       // Use string interpolation for LIMIT/OFFSET to avoid MySQL parameter issues
       const query = `
         SELECT i.*,
@@ -350,7 +358,25 @@ class Board {
         ORDER BY i.created_at DESC
         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
+
+      console.log('🔍 BOARD QUERY DEBUG:', {
+        backlogOnly,
+        whereClause,
+        queryParams,
+        finalQuery: query.replace(/\s+/g, ' ').trim()
+      });
+
       const rows = await database.query(query, queryParams);
+
+      console.log('🔍 BOARD QUERY RESULTS:', {
+        rowCount: rows.length,
+        sampleRow: rows[0] ? {
+          id: rows[0].id,
+          title: rows[0].title,
+          sprint_id: rows[0].sprint_id,
+          sprint_name: rows[0].sprint_name
+        } : null
+      });
 
       return rows.map(row => ({
         id: row.id,

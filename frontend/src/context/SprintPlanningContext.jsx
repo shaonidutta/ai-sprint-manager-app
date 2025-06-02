@@ -35,7 +35,7 @@ const initialState = {
 
 // Reducer function
 const sprintPlanningReducer = (state, action) => {
-  console.log('🔄 State update:', action.type, action.payload);
+  // console.log('🔄 State update:', action.type, action.payload); // Disabled for drag-drop debugging
   
   switch (action.type) {
     case ACTIONS.SET_LOADING:
@@ -68,15 +68,15 @@ const sprintPlanningReducer = (state, action) => {
       };
       
     case ACTIONS.SET_SPRINTS:
-      console.log('📋 Setting sprints:', action.payload);
+      // console.log('📋 Setting sprints:', action.payload); // Disabled for drag-drop debugging
       return { ...state, sprints: action.payload };
-      
+
     case ACTIONS.SET_BACKLOG_ISSUES:
-      console.log('📋 Setting backlog issues:', action.payload);
+      // console.log('📋 Setting backlog issues:', action.payload); // Disabled for drag-drop debugging
       return { ...state, backlogIssues: action.payload };
-      
+
     case ACTIONS.ADD_ISSUE_TO_BACKLOG:
-      console.log('📋 Adding issue to backlog:', action.payload);
+      // console.log('📋 Adding issue to backlog:', action.payload); // Disabled for drag-drop debugging
       return { 
         ...state, 
         backlogIssues: [...state.backlogIssues, action.payload] 
@@ -85,22 +85,37 @@ const sprintPlanningReducer = (state, action) => {
     case ACTIONS.MOVE_ISSUE_TO_SPRINT: {
       const { issueId, targetSprintId, sourceSprintId } = action.payload;
 
+      console.log('🔄 CONTEXT: MOVE_ISSUE_TO_SPRINT', {
+        issueId,
+        targetSprintId,
+        sourceSprintId,
+        currentBacklogCount: state.backlogIssues.length,
+        currentSprintCounts: state.sprints.map(s => ({ id: s.id, count: s.issues?.length || 0 }))
+      });
+
       // Find the issue
       let issueToMove = null;
       if (sourceSprintId) {
         // Moving from sprint to sprint
+        console.log('🔄 Moving from sprint to sprint');
         const sourceSprint = state.sprints.find(s => s.id === sourceSprintId);
         issueToMove = sourceSprint?.issues?.find(i => i.id === issueId);
+        console.log('🔍 Source sprint found:', !!sourceSprint, 'Issue found:', !!issueToMove);
       } else {
         // Moving from backlog to sprint
+        console.log('🔄 Moving from backlog to sprint');
         issueToMove = state.backlogIssues.find(i => i.id === issueId);
+        console.log('🔍 Issue found in backlog:', !!issueToMove);
       }
 
-      if (!issueToMove) return state;
+      if (!issueToMove) {
+        console.log('❌ Issue not found, returning unchanged state');
+        return state;
+      }
 
       const movedIssue = { ...issueToMove, sprint_id: targetSprintId };
 
-      return {
+      const newState = {
         ...state,
         backlogIssues: sourceSprintId ? state.backlogIssues :
           state.backlogIssues.filter(i => i.id !== issueId),
@@ -121,20 +136,39 @@ const sprintPlanningReducer = (state, action) => {
           return sprint;
         })
       };
+
+      console.log('🔄 CONTEXT: After move', {
+        newBacklogCount: newState.backlogIssues.length,
+        newSprintCounts: newState.sprints.map(s => ({ id: s.id, count: s.issues?.length || 0 }))
+      });
+
+      return newState;
     }
       
     case ACTIONS.MOVE_ISSUE_TO_BACKLOG: {
       const { issueId: backlogIssueId, sourceSprintId: fromSprintId } = action.payload;
 
+      console.log('🔄 CONTEXT: MOVE_ISSUE_TO_BACKLOG', {
+        issueId: backlogIssueId,
+        sourceSprintId: fromSprintId,
+        currentBacklogCount: state.backlogIssues.length,
+        currentSprintCounts: state.sprints.map(s => ({ id: s.id, count: s.issues?.length || 0 }))
+      });
+
       // Find the issue in the source sprint
       const fromSprint = state.sprints.find(s => s.id === fromSprintId);
       const issueToBacklog = fromSprint?.issues?.find(i => i.id === backlogIssueId);
 
-      if (!issueToBacklog) return state;
+      console.log('🔍 Source sprint found:', !!fromSprint, 'Issue found:', !!issueToBacklog);
+
+      if (!issueToBacklog) {
+        console.log('❌ Issue not found in source sprint, returning unchanged state');
+        return state;
+      }
 
       const backlogIssue = { ...issueToBacklog, sprint_id: null };
 
-      return {
+      const newState = {
         ...state,
         backlogIssues: [...state.backlogIssues, backlogIssue],
         sprints: state.sprints.map(sprint => {
@@ -147,6 +181,13 @@ const sprintPlanningReducer = (state, action) => {
           return sprint;
         })
       };
+
+      console.log('🔄 CONTEXT: After backlog move', {
+        newBacklogCount: newState.backlogIssues.length,
+        newSprintCounts: newState.sprints.map(s => ({ id: s.id, count: s.issues?.length || 0 }))
+      });
+
+      return newState;
     }
       
     case ACTIONS.UPDATE_ISSUE: {
@@ -320,7 +361,8 @@ export const SprintPlanningProvider = ({ children }) => {
         sprintsData.map(async (sprint) => {
           try {
             console.log(`🔄 Fetching issues for sprint ${sprint.id}:`, sprint.name);
-            const issuesResponse = await api.issues.getBySprint(sprint.id);
+            // Add cache buster to ensure fresh data
+            const issuesResponse = await api.issues.getBySprint(sprint.id, { _t: Date.now() });
             const sprintIssues = issuesResponse.data.data.issues || [];
             console.log(`📋 Sprint ${sprint.id} has ${sprintIssues.length} issues`);
             return { ...sprint, issues: sprintIssues };
@@ -349,17 +391,23 @@ export const SprintPlanningProvider = ({ children }) => {
     try {
       console.log('🔄 Fetching backlog issues for board:', boardId);
 
-      const response = await api.issues.getAll(boardId);
-      const allIssues = response.data.data.issues || [];
+      // Use backlogOnly parameter to get only issues not assigned to sprints
+      // Add timestamp to prevent caching issues
+      const response = await api.issues.getAll(boardId, {
+        backlogOnly: true,
+        _t: Date.now() // Cache buster
+      });
+      const backlogIssues = response.data.data.issues || [];
 
-      console.log('📋 All issues fetched:', allIssues.length);
+      console.log('📋 Backlog issues fetched directly from backend:', backlogIssues.length);
+      console.log('📋 Backlog issues sample with sprint_id:', backlogIssues.map(issue => ({
+        id: issue.id,
+        title: issue.title,
+        sprint_id: issue.sprint_id,
+        sprint_id_type: typeof issue.sprint_id
+      })));
 
-      // Filter issues that are not assigned to any sprint (backlog)
-      const backlog = allIssues.filter(issue => !issue.sprint_id);
-      console.log('📋 Backlog issues:', backlog.length);
-      console.log('📋 Backlog sample:', backlog[0]);
-
-      actions.setBacklogIssues(backlog);
+      actions.setBacklogIssues(backlogIssues);
       actions.setError(null);
     } catch (err) {
       console.error('Failed to fetch backlog issues:', err);
@@ -371,12 +419,12 @@ export const SprintPlanningProvider = ({ children }) => {
   const refreshAllData = useCallback(async (boardId) => {
     if (!boardId) return;
 
-    console.log('🔄 Refreshing all data for board:', boardId);
+    // console.log('🔄 Refreshing all data for board:', boardId); // Disabled for drag-drop debugging
     await Promise.all([
       fetchSprints(boardId),
       fetchBacklogIssues(boardId)
     ]);
-    console.log('✅ All data refreshed');
+    // console.log('✅ All data refreshed'); // Disabled for drag-drop debugging
   }, [fetchSprints, fetchBacklogIssues]);
 
   // Memoize apiActions to prevent infinite re-renders

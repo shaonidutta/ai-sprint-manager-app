@@ -21,14 +21,14 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Log requests in development
-    if (import.meta.env.DEV) {
-      console.log('API Request:', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        data: config.data,
-      });
-    }
+    // Log requests in development (disabled for drag-drop debugging)
+    // if (import.meta.env.DEV) {
+    //   console.log('API Request:', {
+    //     method: config.method?.toUpperCase(),
+    //     url: config.url,
+    //     data: config.data,
+    //   });
+    // }
     
     return config;
   },
@@ -55,14 +55,14 @@ const processQueue = (error, token = null) => {
 
 axiosInstance.interceptors.response.use(
   (response) => {
-    // Log responses in development
-    if (import.meta.env.DEV) {
-      console.log('API Response:', {
-        status: response.status,
-        url: response.config.url,
-        data: response.data,
-      });
-    }
+    // Log responses in development (disabled for drag-drop debugging)
+    // if (import.meta.env.DEV) {
+    //   console.log('API Response:', {
+    //     status: response.status,
+    //     url: response.config.url,
+    //     data: response.data,
+    //   });
+    // }
     return response;
   },
   async (error) => {

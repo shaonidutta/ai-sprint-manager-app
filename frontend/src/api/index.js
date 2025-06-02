@@ -63,9 +63,9 @@ export const api = {
   },
 
   issues: {
-    getAll: (boardId) => axiosInstance.get(API_ENDPOINTS.ISSUES.LIST(boardId)),
+    getAll: (boardId, params = {}) => axiosInstance.get(API_ENDPOINTS.ISSUES.LIST(boardId), { params }),
     getBacklog: (projectId) => axiosInstance.get(API_ENDPOINTS.ISSUES.BACKLOG(projectId)),
-    getBySprint: (sprintId) => axiosInstance.get(API_ENDPOINTS.ISSUES.BY_SPRINT(sprintId)),
+    getBySprint: (sprintId, params = {}) => axiosInstance.get(API_ENDPOINTS.ISSUES.BY_SPRINT(sprintId), { params }),
     getById: (id) => axiosInstance.get(API_ENDPOINTS.ISSUES.DETAIL(id)),
     create: (boardId, data) => axiosInstance.post(API_ENDPOINTS.ISSUES.CREATE(boardId), data),
     update: (id, data) => axiosInstance.put(API_ENDPOINTS.ISSUES.UPDATE(id), data),

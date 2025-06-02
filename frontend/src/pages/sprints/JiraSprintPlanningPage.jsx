@@ -41,7 +41,13 @@ const DraggableIssueCard = ({ issue, onClick, sprintStatus = null, isInSprint = 
     isDragging,
   } = useSortable({
     id: issue.id.toString(),
-    disabled: shouldDisableDragging
+    disabled: shouldDisableDragging,
+    data: {
+      type: 'issue',
+      issue: issue,
+      isInSprint: isInSprint,
+      sprintStatus: sprintStatus
+    }
   });
 
   const style = {
@@ -239,22 +245,52 @@ const DraggableIssueCard = ({ issue, onClick, sprintStatus = null, isInSprint = 
 const DroppableSprintArea = ({ sprint, children }) => {
   const { isOver, setNodeRef } = useDroppable({
     id: `sprint-${sprint.id}`,
+    data: {
+      type: 'sprint',
+      sprint: sprint,
+      accepts: ['issue']
+    }
   });
 
   const isActive = sprint.status === 'Active';
 
+  // Debug logging for drop area
+  React.useEffect(() => {
+    console.log('🎯 DroppableSprintArea registered:', {
+      sprintId: sprint.id,
+      sprintName: sprint.name,
+      dropId: `sprint-${sprint.id}`,
+      isOver
+    });
+  }, [sprint.id, sprint.name, isOver]);
+
   return (
     <div
       ref={setNodeRef}
-      className={`p-4 sm:p-6 lg:p-8 min-h-[120px] rounded-b-xl transition-colors duration-150 ${
+      className={`p-4 sm:p-6 lg:p-8 min-h-[200px] rounded-b-xl transition-colors duration-150 ${
         isActive
           ? 'bg-green-50'
           : 'bg-gray-50'
       } ${
-        isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
+        isOver ? 'bg-blue-100 border-2 border-dashed border-blue-400 shadow-lg' : 'border-2 border-transparent'
       }`}
+      style={{
+        position: 'relative'
+      }}
     >
+      {isOver && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg">
+            Drop issue here
+          </div>
+        </div>
+      )}
       {children}
+      {(!children || (Array.isArray(children) && children.length === 0)) && !isOver && (
+        <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+          Drag issues here to add to sprint
+        </div>
+      )}
     </div>
   );
 };
@@ -263,15 +299,37 @@ const DroppableSprintArea = ({ sprint, children }) => {
 const DroppableBacklogArea = ({ children }) => {
   const { isOver, setNodeRef } = useDroppable({
     id: 'backlog',
+    data: {
+      type: 'backlog',
+      accepts: ['issue']
+    }
   });
+
+  // Debug logging for backlog drop area
+  React.useEffect(() => {
+    console.log('🎯 DroppableBacklogArea registered:', {
+      dropId: 'backlog',
+      isOver
+    });
+  }, [isOver]);
 
   return (
     <div
       ref={setNodeRef}
-      className={`p-4 sm:p-6 lg:p-8 bg-gray-50 rounded-b-xl transition-colors duration-150 ${
-        isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
+      className={`p-4 sm:p-6 lg:p-8 bg-gray-50 rounded-b-xl transition-colors duration-150 min-h-[200px] ${
+        isOver ? 'bg-blue-100 border-2 border-dashed border-blue-400 shadow-lg' : 'border-2 border-transparent'
       }`}
+      style={{
+        position: 'relative'
+      }}
     >
+      {isOver && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg">
+            Drop issue here to return to backlog
+          </div>
+        </div>
+      )}
       {children}
     </div>
   );
@@ -443,15 +501,15 @@ const SprintModal = ({ isOpen, onClose, boardId, onSprintCreated }) => {
 };
 
 const JiraSprintPlanningPage = () => {
-  console.log('🎯 JiraSprintPlanningPage component mounting...');
+  // console.log('🎯 JiraSprintPlanningPage component mounting...'); // Disabled for drag-drop debugging
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const projectId = searchParams.get('project');
 
-  console.log('🎯 About to call useSprintPlanning...');
+  // console.log('🎯 About to call useSprintPlanning...'); // Disabled for drag-drop debugging
   // Use Sprint Planning Context
   const { state, actions, apiActions } = useSprintPlanning();
-  console.log('🎯 useSprintPlanning successful, got context:', { state, actions, apiActions });
+  // console.log('🎯 useSprintPlanning successful, got context:', { state, actions, apiActions }); // Disabled for drag-drop debugging
   const {
     loading,
     error,
@@ -490,17 +548,37 @@ const JiraSprintPlanningPage = () => {
 
   // Handle drag and drop
   const handleDragStart = (event) => {
+    console.log('🚀 DRAG START:', {
+      activeId: event.active.id,
+      activeData: event.active.data.current
+    });
     setActiveId(event.active.id);
   };
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
 
+    console.log('🎯 DRAG END EVENT:', {
+      active: {
+        id: active?.id,
+        data: active?.data?.current
+      },
+      over: {
+        id: over?.id,
+        data: over?.data?.current
+      },
+      currentState: {
+        sprintsCount: sprints.length,
+        backlogCount: backlogIssues.length,
+        sprintIssues: sprints.map(s => ({ id: s.id, name: s.name, issueCount: s.issues?.length || 0 }))
+      }
+    });
+
     // Always reset active ID first to prevent UI issues
     setActiveId(null);
 
     if (!over) {
-      console.log('🎯 Drag ended without valid drop target');
+      console.log('❌ Drag ended without valid drop target');
       return;
     }
 
@@ -510,9 +588,21 @@ const JiraSprintPlanningPage = () => {
     const activeId = active.id;
     const overId = over.id;
 
+    console.log('🔍 PROCESSING DROP:', {
+      activeId,
+      overId,
+      backlogIssuesCount: backlogIssues.length,
+      sprintsCount: sprints.length
+    });
+
     // Find the active issue from backlog or any sprint
     let activeIssue = backlogIssues.find(issue => issue?.id?.toString() === activeId);
     let sourceSprintId = null;
+
+    console.log('🔍 SEARCHING FOR ACTIVE ISSUE:', {
+      foundInBacklog: !!activeIssue,
+      backlogIssueIds: backlogIssues.map(i => i?.id)
+    });
 
     // If not found in backlog, search in sprints
     if (!activeIssue) {
@@ -521,46 +611,80 @@ const JiraSprintPlanningPage = () => {
         if (foundIssue) {
           activeIssue = foundIssue;
           sourceSprintId = sprint.id;
+          console.log('🔍 FOUND IN SPRINT:', {
+            sprintId: sprint.id,
+            sprintName: sprint.name,
+            issueId: foundIssue.id
+          });
           break;
         }
       }
     }
 
     if (!activeIssue) {
-      console.warn('Active issue not found:', activeId);
+      console.error('❌ Active issue not found:', {
+        activeId,
+        availableBacklogIds: backlogIssues.map(i => i?.id),
+        availableSprintIds: sprints.flatMap(s => s.issues?.map(i => i?.id) || [])
+      });
+      setDragLoading(false);
       return;
     }
+
+    console.log('✅ ACTIVE ISSUE FOUND:', {
+      issueId: activeIssue.id,
+      issueTitle: activeIssue.title,
+      sourceSprintId
+    });
 
     // Handle dropping on sprint
     if (overId.startsWith('sprint-')) {
       const targetSprintId = parseInt(overId.replace('sprint-', ''));
 
+      console.log('🎯 DROPPING ON SPRINT:', {
+        targetSprintId,
+        sourceSprintId,
+        isSameSprint: sourceSprintId === targetSprintId
+      });
+
       // Don't move if it's the same sprint
-      if (sourceSprintId === targetSprintId) return;
+      if (sourceSprintId === targetSprintId) {
+        console.log('⚠️ Same sprint, skipping move');
+        setDragLoading(false);
+        return;
+      }
 
       try {
-        // Update issue to assign it to the target sprint
-        await api.issues.update(activeIssue.id, { sprint_id: targetSprintId });
+        console.log('🔄 UPDATING ISSUE API CALL:', {
+          issueId: activeIssue.id,
+          newSprintId: targetSprintId
+        });
 
-        // Create updated issue object
-        const updatedIssue = { ...activeIssue, sprint_id: targetSprintId };
+        // Update issue to assign it to the target sprint
+        const updateResponse = await api.issues.update(activeIssue.id, { sprint_id: targetSprintId });
+
+        console.log('✅ API UPDATE SUCCESS:', updateResponse);
 
         // Use context actions instead of local state setters
         if (sourceSprintId) {
           // Moving from sprint to sprint
+          console.log('🔄 Moving from sprint to sprint via context');
           actions.moveIssueToSprint(activeIssue.id, targetSprintId, sourceSprintId);
         } else {
           // Moving from backlog to sprint
+          console.log('🔄 Moving from backlog to sprint via context');
           actions.moveIssueToSprint(activeIssue.id, targetSprintId);
         }
 
-        console.log(`Successfully moved issue ${activeIssue.id} to sprint ${targetSprintId}`);
+        console.log(`✅ Successfully moved issue ${activeIssue.id} to sprint ${targetSprintId}`);
 
         // Verify the move by refreshing data from backend
+        console.log('🔄 Refreshing data from backend...');
         await apiActions.refreshAllData(selectedBoard);
+        console.log('✅ Data refresh complete');
 
       } catch (err) {
-        console.error('Failed to move issue to sprint:', err);
+        console.error('❌ Failed to move issue to sprint:', err);
         alert('Failed to move issue to sprint. Please try again.');
 
         // Revert optimistic updates and refresh from backend
@@ -570,13 +694,26 @@ const JiraSprintPlanningPage = () => {
 
     // Handle dropping on backlog
     else if (overId === 'backlog') {
+      console.log('🎯 DROPPING ON BACKLOG:', {
+        sourceSprintId,
+        hasSourceSprint: !!sourceSprintId
+      });
+
       // Only allow moving from sprint to backlog
-      if (!sourceSprintId) return;
+      if (!sourceSprintId) {
+        console.log('⚠️ No source sprint, skipping backlog move');
+        setDragLoading(false);
+        return;
+      }
 
       // Find the source sprint to check if it's active
       const sourceSprint = sprints.find(sprint => sprint.id === sourceSprintId);
 
-      console.log('🔍 Drop to backlog - Source sprint:', sourceSprint?.name, 'Status:', sourceSprint?.status);
+      console.log('🔍 Drop to backlog - Source sprint:', {
+        sprintName: sourceSprint?.name,
+        sprintStatus: sourceSprint?.status,
+        isActive: sourceSprint?.status === 'Active'
+      });
 
       // Prevent moving issues from active sprints to backlog
       if (sourceSprint && sourceSprint.status === 'Active') {
@@ -587,22 +724,29 @@ const JiraSprintPlanningPage = () => {
       }
 
       try {
-        // Update issue to remove sprint assignment
-        await api.issues.update(activeIssue.id, { sprint_id: null });
+        console.log('🔄 REMOVING SPRINT ASSIGNMENT:', {
+          issueId: activeIssue.id,
+          removingFromSprintId: sourceSprintId
+        });
 
-        // Create updated issue object
-        const updatedIssue = { ...activeIssue, sprint_id: null };
+        // Update issue to remove sprint assignment
+        const updateResponse = await api.issues.update(activeIssue.id, { sprint_id: null });
+
+        console.log('✅ API UPDATE SUCCESS:', updateResponse);
 
         // Use context action to move issue to backlog
+        console.log('🔄 Moving to backlog via context');
         actions.moveIssueToBacklog(activeIssue.id, sourceSprintId);
 
-        console.log(`Successfully moved issue ${activeIssue.id} to backlog`);
+        console.log(`✅ Successfully moved issue ${activeIssue.id} to backlog`);
 
         // Verify the move by refreshing data from backend
+        console.log('🔄 Refreshing data from backend...');
         await apiActions.refreshAllData(selectedBoard);
+        console.log('✅ Data refresh complete');
 
       } catch (err) {
-        console.error('Failed to move issue to backlog:', err);
+        console.error('❌ Failed to move issue to backlog:', err);
         alert('Failed to move issue to backlog. Please try again.');
 
         // Revert optimistic updates and refresh from backend
@@ -617,16 +761,16 @@ const JiraSprintPlanningPage = () => {
   // Start sprint
   const handleStartSprint = async (sprintId) => {
     try {
-      console.log('🚀 Starting sprint:', sprintId);
+      // console.log('🚀 Starting sprint:', sprintId); // Disabled for drag-drop debugging
 
       // Start the sprint
-      const response = await api.sprints.start(sprintId);
-      console.log('🚀 Sprint start response:', response);
+      await api.sprints.start(sprintId);
+      // console.log('🚀 Sprint start response:', response); // Disabled for drag-drop debugging
 
       // Refresh all data to ensure consistency
       await apiActions.refreshAllData(selectedBoard);
 
-      console.log('🚀 Data refreshed after sprint start');
+      // console.log('🚀 Data refreshed after sprint start'); // Disabled for drag-drop debugging
 
       // Navigate to board view with correct URL pattern
       navigate(`/board?project=${selectedProject}`);
@@ -641,10 +785,10 @@ const JiraSprintPlanningPage = () => {
 
   // Handle issue card click
   const handleIssueClick = (issue) => {
-    console.log('🎯 Issue clicked:', issue);
-    console.log('🎯 Issue ID:', issue?.id);
-    console.log('🎯 Issue ID type:', typeof issue?.id);
-    console.log('🎯 Full issue object:', JSON.stringify(issue, null, 2));
+    // console.log('🎯 Issue clicked:', issue); // Disabled for drag-drop debugging
+    // console.log('🎯 Issue ID:', issue?.id); // Disabled for drag-drop debugging
+    // console.log('🎯 Issue ID type:', typeof issue?.id); // Disabled for drag-drop debugging
+    // console.log('🎯 Full issue object:', JSON.stringify(issue, null, 2)); // Disabled for drag-drop debugging
     setSelectedIssue(issue);
     setShowIssueDetailModal(true);
   };
@@ -840,7 +984,7 @@ const JiraSprintPlanningPage = () => {
                         <div className="space-y-4">
                           {sprint.issues.filter(issue => issue != null).map((issue) => (
                             <DraggableIssueCard
-                              key={issue.id}
+                              key={`sprint-${sprint.id}-${issue.id}`} // Unique key to prevent React reconciliation issues
                               issue={issue}
                               onClick={handleIssueClick}
                               sprintStatus={sprint.status}
@@ -929,6 +1073,7 @@ const JiraSprintPlanningPage = () => {
                       <div className="space-y-4">
                         {backlogIssues
                           .filter(issue => issue != null)
+                          .filter(issue => !issue.sprint_id) // Ensure no sprint-assigned issues show in backlog
                           .filter(issue =>
                             !searchTerm ||
                             issue.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -936,7 +1081,7 @@ const JiraSprintPlanningPage = () => {
                           )
                           .map((issue) => (
                             <DraggableIssueCard
-                              key={issue.id}
+                              key={`backlog-${issue.id}`} // Unique key to prevent React reconciliation issues
                               issue={issue}
                               onClick={handleIssueClick}
                               sprintStatus={null}
@@ -1016,8 +1161,8 @@ const JiraSprintPlanningPage = () => {
         isOpen={showCreateIssueModal}
         onClose={() => setShowCreateIssueModal(false)}
         boardId={selectedBoard}
-        onIssueCreated={async (issue) => {
-          console.log('🎯 Issue created, refreshing data...', issue);
+        onIssueCreated={async () => {
+          // console.log('🎯 Issue created, refreshing data...', issue); // Disabled for drag-drop debugging
           // Refresh data to ensure consistency
           await apiActions.refreshAllData(selectedBoard);
         }}
@@ -1030,8 +1175,8 @@ const JiraSprintPlanningPage = () => {
           setSelectedIssue(null);
         }}
         issueId={selectedIssue?.id}
-        onIssueUpdated={async (updatedIssue) => {
-          console.log('🔄 Issue updated, refreshing data...', updatedIssue);
+        onIssueUpdated={async () => {
+          // console.log('🔄 Issue updated, refreshing data...', updatedIssue); // Disabled for drag-drop debugging
           await apiActions.refreshAllData(selectedBoard);
         }}
       />

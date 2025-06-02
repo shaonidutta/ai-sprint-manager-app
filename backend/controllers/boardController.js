@@ -151,7 +151,15 @@ class BoardController {
     try {
       const { id } = req.params;
       const userId = req.user.id;
-      const { status, assigneeId, sprintId, page, limit } = req.query;
+      const { status, assigneeId, sprintId, page, limit, backlogOnly } = req.query;
+
+      console.log('🔍 BOARD ISSUES REQUEST:', {
+        boardId: id,
+        backlogOnly,
+        backlogOnlyType: typeof backlogOnly,
+        backlogOnlyValue: backlogOnly === 'true',
+        allQueryParams: req.query
+      });
 
       const board = await Board.findById(id);
 
@@ -164,8 +172,11 @@ class BoardController {
         assigneeId: assigneeId ? parseInt(assigneeId) : undefined,
         sprintId: sprintId ? parseInt(sprintId) : undefined,
         page: parseInt(page) || 1,
-        limit: parseInt(limit) || 50
+        limit: parseInt(limit) || 50,
+        backlogOnly: backlogOnly === 'true'
       };
+
+      console.log('🔍 PROCESSED OPTIONS:', options);
 
       const issues = await board.getIssues(options);
 
