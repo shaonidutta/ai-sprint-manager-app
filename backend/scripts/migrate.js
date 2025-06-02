@@ -76,11 +76,11 @@ const createTables = async (connection) => {
       email VARCHAR(255) NOT NULL,
       otp VARCHAR(6) NOT NULL,
       attempts INT DEFAULT 0,
-      expires_at DATETIME NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at_ts BIGINT NOT NULL,
+      expires_at_ts BIGINT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       INDEX idx_email_otp (email, otp),
-      INDEX idx_expires_at (expires_at)
+      INDEX idx_expires_at_ts (expires_at_ts)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
     // Projects table

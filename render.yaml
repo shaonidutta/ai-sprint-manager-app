@@ -1,0 +1,94 @@
+services:
+  - type: web
+    name: ai-sprint-manager-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: API_VERSION
+        value: v1
+      - key: DB_HOST
+        fromDatabase:
+          name: ai-sprint-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: ai-sprint-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: ai-sprint-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: ai-sprint-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: ai-sprint-db
+          property: password
+      - key: DB_CONNECTION_LIMIT
+        value: 10
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 15m
+      - key: JWT_REFRESH_EXPIRE
+        value: 7d
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: FROM_EMAIL
+        sync: false
+      - key: FROM_NAME
+        value: AI Sprint Manager
+      - key: FRONTEND_URL
+        value: https://your-app-name.vercel.app
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_MAX_TOKENS
+        value: 4000
+      - key: OPENAI_TEMPERATURE
+        value: 0.3
+      - key: UPLOAD_PATH
+        value: /tmp/uploads/
+      - key: MAX_FILE_SIZE
+        value: 5242880
+      - key: ALLOWED_FILE_TYPES
+        value: jpg,jpeg,png,gif,pdf,doc,docx
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: LOG_LEVEL
+        value: info
+      - key: LOG_FILE
+        value: /tmp/logs/app.log
+      - key: AI_QUOTA_LIMIT
+        value: 100
+      - key: AI_QUOTA_RESET_DAYS
+        value: 30
+
+databases:
+  - name: ai-sprint-db
+    databaseName: sprint_management
+    user: admin
+    plan: free
