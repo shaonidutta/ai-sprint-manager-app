@@ -24,7 +24,7 @@ const createIssueValidation = [
     .withMessage('Invalid priority. Must be one of: P1, P2, P3, P4'),
   
   body('assigneeId')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('Assignee ID must be a positive integer'),
   
@@ -74,7 +74,7 @@ const updateIssueValidation = [
     .withMessage('Invalid priority. Must be one of: P1, P2, P3, P4'),
   
   body('assigneeId')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('Assignee ID must be a positive integer'),
   
@@ -162,7 +162,7 @@ const issueFiltersValidation = [
     .withMessage('Invalid status. Must be one of: To Do, In Progress, Done, Blocked'),
   
   query('assigneeId')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('Assignee ID must be a positive integer'),
   

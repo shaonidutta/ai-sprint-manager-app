@@ -39,12 +39,21 @@ class IssueController {
   static async getIssueById(req, res) {
     try {
       const { id } = req.params;
+      const userId = req.user.id;
+
+      // First check if issue exists
       const issue = await Issue.findById(id);
 
+      if (!issue) {
+        return res.status(404).json(formatErrorResponse({
+          code: 'NOT_FOUND_ERROR',
+          message: 'Issue not found'
+        }));
+      }
+
       // Check if user has access to this issue's board
-      const userId = req.user.id;
       const boardId = issue.board.id;
-      
+
       // This will throw an error if user doesn't have access
       await Issue.findByBoardId(boardId, userId, { limit: 1 });
 
@@ -54,6 +63,15 @@ class IssueController {
       }));
     } catch (error) {
       logger.error('Error getting issue by ID:', error);
+
+      // Handle specific error types
+      if (error.name === 'NotFoundError' || error.message.includes('not found')) {
+        return res.status(404).json(formatErrorResponse({
+          code: 'NOT_FOUND_ERROR',
+          message: 'Issue not found'
+        }));
+      }
+
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
     }
   }

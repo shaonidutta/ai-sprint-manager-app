@@ -1,12 +1,7 @@
-import { AuthProvider } from '../../context/AuthContext';
 import { Outlet } from 'react-router-dom';
 
 const RootLayout = () => {
-  return (
-    <AuthProvider>
-      <Outlet />
-    </AuthProvider>
-  );
+  return <Outlet />;
 };
 
-export default RootLayout; 
+export default RootLayout;

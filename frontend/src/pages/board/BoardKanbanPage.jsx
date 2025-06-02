@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, Button } from '../../components/common';
+import { IssueDetailModal } from '../../components/issues';
 import { api } from '../../api';
 import {
   DndContext,
@@ -54,7 +55,7 @@ const DroppableColumn = ({ column, issues, children, isOver, isDragging }) => {
 };
 
 // Draggable Issue Card Component
-const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false, getPriorityColor, getIssueTypeIcon, navigate }) => {
+const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
   const {
     attributes,
     listeners,
@@ -67,57 +68,144 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false, getPriority
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isDragOverlay ? 'none' : transition,
-    opacity: isDragging ? 0.8 : 1,
-    zIndex: isDragging ? 1000 : 'auto',
+    opacity: isDragging ? 0.5 : 1,
   };
 
-  const cardClasses = `
-    p-3 cursor-grab active:cursor-grabbing
-    hover:shadow-md transition-all duration-200 border-l-4
-    ${isDragging ? 'shadow-xl rotate-2 scale-105' : ''}
-    ${isDragOverlay ? 'shadow-2xl rotate-3 scale-110' : ''}
-    ${isDragging || isDragOverlay ? 'bg-white border-blue-300' : 'bg-white border-gray-200'}
-    ${getPriorityColor(issue.priority)}
-  `;
+  const getIssueTypeIcon = (type) => {
+    switch (type) {
+      case 'Story':
+        return (
+          <div className="w-4 h-4 bg-green-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">US</span>
+          </div>
+        );
+      case 'Bug':
+        return (
+          <div className="w-4 h-4 bg-red-500 rounded flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+        );
+      case 'Task':
+        return (
+          <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">T</span>
+          </div>
+        );
+      case 'Epic':
+        return (
+          <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">E</span>
+          </div>
+        );
+      default:
+        return (
+          <div className="w-4 h-4 bg-gray-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">?</span>
+          </div>
+        );
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'P1': return 'bg-red-100 text-red-800 border-red-200';
+      case 'P2': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'P3': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'P4': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'To Do': return 'bg-gray-100 text-gray-800';
+      case 'In Progress': return 'bg-blue-100 text-blue-800';
+      case 'Done': return 'bg-green-100 text-green-800';
+      case 'Blocked': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleCardClick = (e) => {
+    // Prevent click when dragging
+    if (isDragging) return;
+
+    // Stop propagation to prevent drag handlers
+    e.stopPropagation();
+
+    if (onClick) {
+      onClick(issue);
+    }
+  };
 
   return (
-    <Card
+    <div
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className={cardClasses}
-      onClick={onClick}
+      className={`group relative bg-white border border-gray-200 rounded-lg transition-all duration-150 hover:shadow-md hover:border-blue-300 ${
+        isDragging ? 'shadow-lg border-blue-400 transform rotate-1' : ''
+      }`}
     >
-      <div className="flex items-start space-x-2 mb-2">
-        {getIssueTypeIcon(issue.issue_type)}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 line-clamp-2">
-            {issue.title}
-          </p>
-        </div>
+      {/* Drag Handle */}
+      <div
+        {...listeners}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cursor-grab active:cursor-grabbing"
+      >
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+        </svg>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-gray-500">
-        <span>{issue.issue_key || `#${issue.id}`}</span>
-        {issue.story_points && (
-          <span className="bg-gray-200 px-2 py-1 rounded">
-            {issue.story_points} SP
-          </span>
-        )}
-      </div>
+      {/* Card Content */}
+      <div className="p-3">
+        <div className="flex items-start space-x-3">
+          {getIssueTypeIcon(issue.issue_type)}
+          <div className="flex-1 min-w-0">
+            <h4
+              className="text-sm font-medium text-gray-900 line-clamp-2 mb-2 cursor-pointer hover:text-blue-600 transition-colors duration-150"
+              onClick={handleCardClick}
+            >
+              {issue.title}
+            </h4>
 
-      {issue.assignee && (
-        <div className="mt-2 flex items-center space-x-1">
-          <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
-            {issue.assignee.firstName?.charAt(0)}{issue.assignee.lastName?.charAt(0)}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500 font-mono">
+                {issue.issue_key || `#${issue.id}`}
+              </span>
+
+              <div className="flex items-center space-x-2">
+                {/* Story Points */}
+                {issue.story_points && (
+                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded font-medium">
+                    {issue.story_points} SP
+                  </span>
+                )}
+
+                {/* Priority */}
+                <span className={`text-xs px-2 py-1 rounded border font-medium ${getPriorityColor(issue.priority)}`}>
+                  {issue.priority}
+                </span>
+              </div>
+            </div>
+
+            {/* Assignee */}
+            {issue.assignee && (
+              <div className="flex items-center mt-2 text-xs text-gray-600">
+                <div className="w-4 h-4 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                  <span className="text-xs font-medium text-gray-700">
+                    {issue.assignee.first_name?.[0]}{issue.assignee.last_name?.[0]}
+                  </span>
+                </div>
+                <span>{issue.assignee.first_name} {issue.assignee.last_name}</span>
+              </div>
+            )}
           </div>
-          <span className="text-xs text-gray-600">
-            {issue.assignee.firstName} {issue.assignee.lastName}
-          </span>
         </div>
-      )}
-    </Card>
+      </div>
+    </div>
   );
 };
 
@@ -138,6 +226,8 @@ const BoardKanbanPage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOverColumn, setDragOverColumn] = useState(null);
   const [isUpdatingIssue, setIsUpdatingIssue] = useState(false);
+  const [showIssueDetailModal, setShowIssueDetailModal] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState(null);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -331,42 +421,68 @@ const BoardKanbanPage = () => {
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'P1': return 'border-l-red-500';
-      case 'P2': return 'border-l-orange-500';
-      case 'P3': return 'border-l-yellow-500';
-      case 'P4': return 'border-l-green-500';
-      default: return 'border-l-gray-500';
-    }
+
+
+  // Handle issue card click
+  const handleIssueClick = (issue) => {
+    console.log('🎯 Board issue clicked:', issue);
+    console.log('🎯 Board issue ID:', issue?.id);
+    setSelectedIssue(issue);
+    setShowIssueDetailModal(true);
   };
 
+  // Handle issue update from modal
+  const handleIssueUpdated = (updatedIssue) => {
+    setIssues(prev => prev.map(issue =>
+      issue.id === updatedIssue.id ? updatedIssue : issue
+    ));
+  };
+
+  // Helper functions for backlog view
   const getIssueTypeIcon = (type) => {
     switch (type) {
       case 'Story':
         return (
-          <div className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center">
-            <span className="text-white text-xs font-bold">S</span>
+          <div className="w-4 h-4 bg-green-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">US</span>
           </div>
         );
       case 'Bug':
         return (
-          <div className="w-4 h-4 bg-red-500 rounded-sm flex items-center justify-center">
-            <span className="text-white text-xs font-bold">B</span>
+          <div className="w-4 h-4 bg-red-500 rounded flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
           </div>
         );
       case 'Task':
         return (
-          <div className="w-4 h-4 bg-blue-500 rounded-sm flex items-center justify-center">
+          <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center">
             <span className="text-white text-xs font-bold">T</span>
+          </div>
+        );
+      case 'Epic':
+        return (
+          <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">E</span>
           </div>
         );
       default:
         return (
-          <div className="w-4 h-4 bg-gray-500 rounded-sm flex items-center justify-center">
+          <div className="w-4 h-4 bg-gray-500 rounded flex items-center justify-center">
             <span className="text-white text-xs font-bold">?</span>
           </div>
         );
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'P1': return 'bg-red-100 text-red-800';
+      case 'P2': return 'bg-orange-100 text-orange-800';
+      case 'P3': return 'bg-yellow-100 text-yellow-800';
+      case 'P4': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -562,10 +678,7 @@ const BoardKanbanPage = () => {
                                 <DraggableIssueCard
                                   key={issue.id}
                                   issue={issue}
-                                  onClick={() => navigate(`/issues/${issue.id}`)}
-                                  getPriorityColor={getPriorityColor}
-                                  getIssueTypeIcon={getIssueTypeIcon}
-                                  navigate={navigate}
+                                  onClick={handleIssueClick}
                                 />
                               ))
                             )}
@@ -583,9 +696,6 @@ const BoardKanbanPage = () => {
                     issue={issues.find(issue => issue.id.toString() === activeId)}
                     onClick={() => {}}
                     isDragOverlay={true}
-                    getPriorityColor={getPriorityColor}
-                    getIssueTypeIcon={getIssueTypeIcon}
-                    navigate={navigate}
                   />
                 ) : null}
               </DragOverlay>
@@ -602,10 +712,10 @@ const BoardKanbanPage = () => {
               
               <div className="divide-y divide-gray-200">
                 {issues.map((issue) => (
-                  <div 
-                    key={issue.id} 
+                  <div
+                    key={issue.id}
                     className="px-6 py-4 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => navigate(`/issues/${issue.id}`)}
+                    onClick={() => handleIssueClick(issue)}
                   >
                     <div className="flex items-center space-x-3">
                       {getIssueTypeIcon(issue.issue_type)}
@@ -623,7 +733,7 @@ const BoardKanbanPage = () => {
                             {issue.story_points} SP
                           </span>
                         )}
-                        <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(issue.priority).replace('border-l-', 'bg-').replace('-500', '-100')} text-gray-800`}>
+                        <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(issue.priority)}`}>
                           {issue.priority}
                         </span>
                       </div>
@@ -635,6 +745,17 @@ const BoardKanbanPage = () => {
           </div>
         )}
       </div>
+
+      {/* Issue Detail Modal */}
+      <IssueDetailModal
+        isOpen={showIssueDetailModal}
+        onClose={() => {
+          setShowIssueDetailModal(false);
+          setSelectedIssue(null);
+        }}
+        issueId={selectedIssue?.id}
+        onIssueUpdated={handleIssueUpdated}
+      />
     </div>
   );
 };

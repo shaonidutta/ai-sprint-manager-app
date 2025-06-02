@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Input } from '../../components/common';
-import { CreateIssueModal } from '../../components/issues';
+import { CreateIssueModal, IssueDetailModal } from '../../components/issues';
+import { useSprintPlanning } from '../../context/SprintPlanningContext';
 import { api } from '../../api';
 import {
   DndContext,
@@ -25,7 +26,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // Draggable Issue Card Component
-const DraggableIssueCard = ({ issue }) => {
+const DraggableIssueCard = ({ issue, onClick }) => {
+
   const {
     attributes,
     listeners,
@@ -42,25 +44,83 @@ const DraggableIssueCard = ({ issue }) => {
   };
 
   const getIssueTypeIcon = (type) => {
-    switch (type) {
+    // Debug logging to see what type values we're actually getting
+    console.log('🔍 Issue type received:', type, 'Type:', typeof type);
+
+    // Normalize the type to handle different cases and formats
+    const normalizedType = type ? type.toString().trim() : '';
+
+    switch (normalizedType) {
       case 'Story':
-        return <div className="w-4 h-4 bg-green-500 rounded-sm flex items-center justify-center text-white text-xs font-bold">S</div>;
+      case 'story':
+      case 'User Story':
+        return (
+          <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">US</span>
+          </div>
+        );
       case 'Bug':
-        return <div className="w-4 h-4 bg-red-500 rounded-sm flex items-center justify-center text-white text-xs font-bold">B</div>;
+      case 'bug':
+        return (
+          <div className="w-5 h-5 bg-red-500 rounded flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+        );
       case 'Task':
-        return <div className="w-4 h-4 bg-blue-500 rounded-sm flex items-center justify-center text-white text-xs font-bold">T</div>;
+      case 'task':
+        return (
+          <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">T</span>
+          </div>
+        );
+      case 'Epic':
+      case 'epic':
+        return (
+          <div className="w-5 h-5 bg-purple-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">E</span>
+          </div>
+        );
       default:
-        return <div className="w-4 h-4 bg-gray-500 rounded-sm flex items-center justify-center text-white text-xs font-bold">?</div>;
+        console.warn('🚨 Unknown issue type:', type, 'Falling back to default icon');
+        return (
+          <div className="w-5 h-5 bg-gray-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">?</span>
+          </div>
+        );
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'P1': return 'text-red-600';
-      case 'P2': return 'text-orange-600';
-      case 'P3': return 'text-yellow-600';
-      case 'P4': return 'text-green-600';
-      default: return 'text-gray-600';
+      case 'P1': return 'bg-red-100 text-red-800 border-red-200';
+      case 'P2': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'P3': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'P4': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'To Do': return 'bg-gray-100 text-gray-800';
+      case 'In Progress': return 'bg-blue-100 text-blue-800';
+      case 'Done': return 'bg-green-100 text-green-800';
+      case 'Blocked': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleCardClick = (e) => {
+    // Prevent click when dragging
+    if (isDragging) return;
+
+    // Stop propagation to prevent drag handlers
+    e.stopPropagation();
+
+    if (onClick) {
+      onClick(issue);
     }
   };
 
@@ -69,31 +129,68 @@ const DraggableIssueCard = ({ issue }) => {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className={`p-4 bg-white border border-gray-200 rounded-lg cursor-pointer transition-all duration-150 hover:shadow-md hover:border-blue-300 ${
+      className={`group relative bg-white border border-gray-200 rounded-lg transition-all duration-150 hover:shadow-md hover:border-blue-300 ${
         isDragging ? 'shadow-lg border-blue-400 transform rotate-1' : ''
       }`}
     >
-      <div className="flex items-start space-x-3">
-        {getIssueTypeIcon(issue.issue_type)}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 line-clamp-2">
-            {issue.title}
-          </p>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-500">
-              {issue.issue_key || `#${issue.id}`}
-            </span>
-            <div className="flex items-center space-x-2">
-              {issue.story_points && (
-                <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium">
-                  {issue.story_points} SP
-                </span>
-              )}
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getPriorityColor(issue.priority)}`}>
-                {issue.priority}
+      {/* Drag Handle */}
+      <div
+        {...listeners}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cursor-grab active:cursor-grabbing"
+      >
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+        </svg>
+      </div>
+
+      {/* Card Content */}
+      <div className="p-4">
+        <div className="flex items-start space-x-3">
+          {getIssueTypeIcon(issue.issue_type)}
+          <div className="flex-1 min-w-0">
+            <h4
+              className="text-sm font-medium text-gray-900 line-clamp-2 mb-2 cursor-pointer hover:text-blue-600 transition-colors duration-150"
+              onClick={handleCardClick}
+            >
+              {issue.title}
+            </h4>
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500 font-mono">
+                {issue.issue_key || `#${issue.id}`}
               </span>
+
+              <div className="flex items-center space-x-2">
+                {/* Status Badge */}
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(issue.status)}`}>
+                  {issue.status}
+                </span>
+
+                {/* Story Points */}
+                {issue.story_points && (
+                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded font-medium">
+                    {issue.story_points} SP
+                  </span>
+                )}
+
+                {/* Priority */}
+                <span className={`text-xs px-2 py-1 rounded border font-medium ${getPriorityColor(issue.priority)}`}>
+                  {issue.priority}
+                </span>
+              </div>
             </div>
+
+            {/* Assignee */}
+            {issue.assignee && (
+              <div className="flex items-center mt-2 text-xs text-gray-600">
+                <div className="w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                  <span className="text-xs font-medium text-gray-700">
+                    {issue.assignee.first_name?.[0]}{issue.assignee.last_name?.[0]}
+                  </span>
+                </div>
+                <span>{issue.assignee.first_name} {issue.assignee.last_name}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -110,7 +207,25 @@ const DroppableSprintArea = ({ sprint, children }) => {
   return (
     <div
       ref={setNodeRef}
-      className={`p-8 min-h-[120px] bg-gray-50 rounded-b-xl transition-colors duration-150 ${
+      className={`p-4 sm:p-6 lg:p-8 min-h-[120px] bg-gray-50 rounded-b-xl transition-colors duration-150 ${
+        isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
+      }`}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Droppable Backlog Area Component
+const DroppableBacklogArea = ({ children }) => {
+  const { isOver, setNodeRef } = useDroppable({
+    id: 'backlog',
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`p-4 sm:p-6 lg:p-8 bg-gray-50 rounded-b-xl transition-colors duration-150 ${
         isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
       }`}
     >
@@ -285,22 +400,34 @@ const SprintModal = ({ isOpen, onClose, boardId, onSprintCreated }) => {
 };
 
 const JiraSprintPlanningPage = () => {
+  console.log('🎯 JiraSprintPlanningPage component mounting...');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const projectId = searchParams.get('project');
-  
-  const [projects, setProjects] = useState([]);
-  const [boards, setBoards] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(projectId || '');
-  const [selectedBoard, setSelectedBoard] = useState('');
-  const [sprints, setSprints] = useState([]);
-  const [backlogIssues, setBacklogIssues] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
+  console.log('🎯 About to call useSprintPlanning...');
+  // Use Sprint Planning Context
+  const { state, actions, apiActions } = useSprintPlanning();
+  console.log('🎯 useSprintPlanning successful, got context:', { state, actions, apiActions });
+  const {
+    loading,
+    error,
+    projects,
+    boards,
+    selectedProject,
+    selectedBoard,
+    sprints,
+    backlogIssues
+  } = state;
+
+  // Local state for UI interactions
   const [showCreateIssueModal, setShowCreateIssueModal] = useState(false);
   const [showSprintModal, setShowSprintModal] = useState(false);
+  const [showIssueDetailModal, setShowIssueDetailModal] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeId, setActiveId] = useState(null);
+  const [dragLoading, setDragLoading] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -309,94 +436,14 @@ const JiraSprintPlanningPage = () => {
     })
   );
 
-  // Fetch projects
-  const fetchProjects = async () => {
-    try {
-      const response = await api.projects.getAll({ limit: 100 });
-      setProjects(response.data.data.projects || []);
-    } catch (err) {
-      console.error('Failed to fetch projects:', err);
+  // Initialize project ID from URL
+  useEffect(() => {
+    if (projectId && projectId !== selectedProject) {
+      actions.setSelectedProject(projectId);
     }
-  };
+  }, [projectId, selectedProject, actions]);
 
-  // Fetch boards for selected project
-  const fetchBoards = async (projectId) => {
-    if (!projectId) {
-      setBoards([]);
-      return;
-    }
 
-    try {
-      const response = await api.boards.getAll(projectId);
-      const boardsData = response.data.data.boards || [];
-      setBoards(boardsData);
-      
-      // Auto-select first board if available
-      if (boardsData.length > 0 && !selectedBoard) {
-        setSelectedBoard(boardsData[0].id.toString());
-      }
-    } catch (err) {
-      console.error('Failed to fetch boards:', err);
-      setError('Failed to load boards. Please try again.');
-    }
-  };
-
-  // Fetch sprints for selected board
-  const fetchSprints = async (boardId) => {
-    if (!boardId) {
-      setSprints([]);
-      return;
-    }
-
-    try {
-      const response = await api.sprints.getAll(boardId);
-      const sprintsData = response.data.data.sprints || [];
-
-      // Fetch issues for each sprint using the dedicated endpoint
-      const sprintsWithIssues = await Promise.all(
-        sprintsData.map(async (sprint) => {
-          try {
-            const issuesResponse = await api.issues.getBySprint(sprint.id);
-            const sprintIssues = issuesResponse.data.data.issues || [];
-            return { ...sprint, issues: sprintIssues };
-          } catch (err) {
-            console.error(`Failed to fetch issues for sprint ${sprint.id}:`, err);
-            return { ...sprint, issues: [] };
-          }
-        })
-      );
-
-      setSprints(sprintsWithIssues);
-    } catch (err) {
-      console.error('Failed to fetch sprints:', err);
-    }
-  };
-
-  // Fetch backlog issues (issues without sprint)
-  const fetchBacklogIssues = async (boardId) => {
-    if (!boardId) {
-      setBacklogIssues([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await api.issues.getAll(boardId);
-      const allIssues = response.data.data.issues || [];
-
-      // Filter issues that are not assigned to any sprint (backlog)
-      const backlog = allIssues.filter(issue => !issue.sprint_id);
-      setBacklogIssues(backlog);
-      setError(null);
-    } catch (err) {
-      console.error('Failed to fetch backlog issues:', err);
-      setError('Failed to load backlog issues. Please try again.');
-      setBacklogIssues([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Handle drag and drop
   const handleDragStart = (event) => {
@@ -405,84 +452,168 @@ const JiraSprintPlanningPage = () => {
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
+
+    // Always reset active ID first to prevent UI issues
     setActiveId(null);
 
-    if (!over) return;
+    if (!over) {
+      console.log('🎯 Drag ended without valid drop target');
+      return;
+    }
+
+    // Set loading state for drag operations
+    setDragLoading(true);
 
     const activeId = active.id;
     const overId = over.id;
 
-    // Find the active issue
-    const activeIssue = backlogIssues.find(issue => issue.id.toString() === activeId);
-    if (!activeIssue) return;
+    // Find the active issue from backlog or any sprint
+    let activeIssue = backlogIssues.find(issue => issue?.id?.toString() === activeId);
+    let sourceSprintId = null;
 
-    // Check if dropped on a sprint
+    // If not found in backlog, search in sprints
+    if (!activeIssue) {
+      for (const sprint of sprints) {
+        const foundIssue = sprint.issues?.find(issue => issue?.id?.toString() === activeId);
+        if (foundIssue) {
+          activeIssue = foundIssue;
+          sourceSprintId = sprint.id;
+          break;
+        }
+      }
+    }
+
+    if (!activeIssue) {
+      console.warn('Active issue not found:', activeId);
+      return;
+    }
+
+    // Handle dropping on sprint
     if (overId.startsWith('sprint-')) {
-      const sprintId = overId.replace('sprint-', '');
+      const targetSprintId = parseInt(overId.replace('sprint-', ''));
+
+      // Don't move if it's the same sprint
+      if (sourceSprintId === targetSprintId) return;
 
       try {
-        // Update issue to assign it to the sprint
-        await api.issues.update(activeIssue.id, { sprintId: parseInt(sprintId) });
+        // Update issue to assign it to the target sprint
+        await api.issues.update(activeIssue.id, { sprint_id: targetSprintId });
 
-        // Remove from backlog
-        setBacklogIssues(prev => prev.filter(issue => issue.id !== activeIssue.id));
+        // Create updated issue object
+        const updatedIssue = { ...activeIssue, sprint_id: targetSprintId };
 
-        // Add to sprint issues (update sprint state)
-        setSprints(prev => prev.map(sprint => {
-          if (sprint.id.toString() === sprintId) {
-            return {
-              ...sprint,
-              issues: [...(sprint.issues || []), { ...activeIssue, sprint_id: parseInt(sprintId) }]
-            };
-          }
-          return sprint;
-        }));
+        // Use context actions instead of local state setters
+        if (sourceSprintId) {
+          // Moving from sprint to sprint
+          actions.moveIssueToSprint(activeIssue.id, targetSprintId, sourceSprintId);
+        } else {
+          // Moving from backlog to sprint
+          actions.moveIssueToSprint(activeIssue.id, targetSprintId);
+        }
+
+        console.log(`Successfully moved issue ${activeIssue.id} to sprint ${targetSprintId}`);
+
+        // Verify the move by refreshing data from backend
+        await apiActions.refreshAllData(selectedBoard);
+
       } catch (err) {
         console.error('Failed to move issue to sprint:', err);
         alert('Failed to move issue to sprint. Please try again.');
+
+        // Revert optimistic updates and refresh from backend
+        await apiActions.refreshAllData(selectedBoard);
       }
     }
+
+    // Handle dropping on backlog
+    else if (overId === 'backlog') {
+      // Only allow moving from sprint to backlog
+      if (!sourceSprintId) return;
+
+      try {
+        // Update issue to remove sprint assignment
+        await api.issues.update(activeIssue.id, { sprint_id: null });
+
+        // Create updated issue object
+        const updatedIssue = { ...activeIssue, sprint_id: null };
+
+        // Use context action to move issue to backlog
+        actions.moveIssueToBacklog(activeIssue.id, sourceSprintId);
+
+        console.log(`Successfully moved issue ${activeIssue.id} to backlog`);
+
+        // Verify the move by refreshing data from backend
+        await apiActions.refreshAllData(selectedBoard);
+
+      } catch (err) {
+        console.error('Failed to move issue to backlog:', err);
+        alert('Failed to move issue to backlog. Please try again.');
+
+        // Revert optimistic updates and refresh from backend
+        await apiActions.refreshAllData(selectedBoard);
+      }
+    }
+
+    // Always reset loading state
+    setDragLoading(false);
   };
 
   // Start sprint
   const handleStartSprint = async (sprintId) => {
     try {
-      await api.sprints.start(sprintId);
+      console.log('🚀 Starting sprint:', sprintId);
 
-      // Refresh sprints
-      fetchSprints(selectedBoard);
+      // Start the sprint
+      const response = await api.sprints.start(sprintId);
+      console.log('🚀 Sprint start response:', response);
 
-      // Navigate to board view
-      navigate(`/boards/${selectedBoard}`);
+      // Refresh all data to ensure consistency
+      await apiActions.refreshAllData(selectedBoard);
+
+      console.log('🚀 Data refreshed after sprint start');
+
+      // Navigate to board view with correct URL pattern
+      navigate(`/board?project=${selectedProject}`);
     } catch (err) {
       console.error('Failed to start sprint:', err);
       alert('Failed to start sprint. Please try again.');
+
+      // Refresh data even on error to ensure consistency
+      await apiActions.refreshAllData(selectedBoard);
     }
   };
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  // Handle issue card click
+  const handleIssueClick = (issue) => {
+    console.log('🎯 Issue clicked:', issue);
+    console.log('🎯 Issue ID:', issue?.id);
+    console.log('🎯 Issue ID type:', typeof issue?.id);
+    console.log('🎯 Full issue object:', JSON.stringify(issue, null, 2));
+    setSelectedIssue(issue);
+    setShowIssueDetailModal(true);
+  };
 
+
+
+  // Load initial data
+  useEffect(() => {
+    apiActions.fetchProjects();
+  }, [apiActions]);
+
+  // Handle project selection
   useEffect(() => {
     if (selectedProject) {
-      fetchBoards(selectedProject);
-    } else {
-      setBoards([]);
-      setSelectedBoard('');
+      apiActions.fetchBoards(selectedProject);
     }
-  }, [selectedProject]);
+  }, [selectedProject, apiActions]);
 
+  // Handle board selection
   useEffect(() => {
     if (selectedBoard) {
-      fetchSprints(selectedBoard);
-      fetchBacklogIssues(selectedBoard);
-    } else {
-      setSprints([]);
-      setBacklogIssues([]);
-      setLoading(false);
+      apiActions.fetchSprints(selectedBoard);
+      apiActions.fetchBacklogIssues(selectedBoard);
     }
-  }, [selectedBoard]);
+  }, [selectedBoard, apiActions]);
 
   return (
     <div className="h-full flex flex-col">
@@ -510,7 +641,7 @@ const JiraSprintPlanningPage = () => {
             <div className="w-full sm:min-w-[200px] lg:min-w-[250px]">
               <select
                 value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
+                onChange={(e) => actions.setSelectedProject(e.target.value)}
                 className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 bg-white hover:border-gray-400"
               >
                 <option value="">Select Project...</option>
@@ -565,6 +696,17 @@ const JiraSprintPlanningPage = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
+            {/* Loading overlay for drag operations */}
+            {dragLoading && (
+              <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 shadow-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-700 font-medium">Updating sprint...</span>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-8">
               {/* Sprint Sections */}
               {sprints.map((sprint) => (
@@ -600,7 +742,7 @@ const JiraSprintPlanningPage = () => {
                           </span>
                           {sprint.issues?.length > 0 && (
                             <p className="text-xs text-gray-500">
-                              {sprint.issues.reduce((sum, issue) => sum + (issue.story_points || 0), 0)} story points
+                              {sprint.issues.filter(issue => issue != null).reduce((sum, issue) => sum + (issue.story_points || 0), 0)} story points
                             </p>
                           )}
                         </div>
@@ -622,12 +764,12 @@ const JiraSprintPlanningPage = () => {
                   <DroppableSprintArea sprint={sprint}>
                     {sprint.issues && sprint.issues.length > 0 ? (
                       <SortableContext
-                        items={sprint.issues.map(issue => issue.id.toString())}
+                        items={sprint.issues.filter(issue => issue?.id).map(issue => issue.id.toString())}
                         strategy={verticalListSortingStrategy}
                       >
                         <div className="space-y-4">
-                          {sprint.issues.map((issue) => (
-                            <DraggableIssueCard key={issue.id} issue={issue} />
+                          {sprint.issues.filter(issue => issue != null).map((issue) => (
+                            <DraggableIssueCard key={issue.id} issue={issue} onClick={handleIssueClick} />
                           ))}
                         </div>
                       </SortableContext>
@@ -678,7 +820,7 @@ const JiraSprintPlanningPage = () => {
                       <div>
                         <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Backlog</h2>
                         <p className="text-sm text-gray-600 mt-1">
-                          {backlogIssues.length} issues • {backlogIssues.reduce((sum, issue) => sum + (issue.story_points || 0), 0)} story points
+                          {backlogIssues.length} issues • {backlogIssues.filter(issue => issue != null).reduce((sum, issue) => sum + (issue.story_points || 0), 0)} story points
                         </p>
                       </div>
                     </div>
@@ -695,10 +837,10 @@ const JiraSprintPlanningPage = () => {
 
                 {/* Backlog Issues */}
                 <SortableContext
-                  items={backlogIssues.map(issue => issue.id.toString())}
+                  items={backlogIssues.filter(issue => issue?.id).map(issue => issue.id.toString())}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 rounded-b-xl">
+                  <DroppableBacklogArea>
                     {loading ? (
                       <div className="space-y-4">
                         {[...Array(5)].map((_, index) => (
@@ -710,13 +852,14 @@ const JiraSprintPlanningPage = () => {
                     ) : backlogIssues.length > 0 ? (
                       <div className="space-y-4">
                         {backlogIssues
+                          .filter(issue => issue != null)
                           .filter(issue =>
                             !searchTerm ||
-                            issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            issue.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (issue.description && issue.description.toLowerCase().includes(searchTerm.toLowerCase()))
                           )
                           .map((issue) => (
-                            <DraggableIssueCard key={issue.id} issue={issue} />
+                            <DraggableIssueCard key={issue.id} issue={issue} onClick={handleIssueClick} />
                           ))}
                       </div>
                     ) : (
@@ -736,7 +879,7 @@ const JiraSprintPlanningPage = () => {
                         </Button>
                       </div>
                     )}
-                  </div>
+                  </DroppableBacklogArea>
                 </SortableContext>
               </div>
             </div>
@@ -744,7 +887,9 @@ const JiraSprintPlanningPage = () => {
             <DragOverlay>
               {activeId ? (
                 <DraggableIssueCard
-                  issue={backlogIssues.find(issue => issue.id.toString() === activeId)}
+                  issue={backlogIssues.find(issue => issue?.id?.toString() === activeId) ||
+                         sprints.flatMap(s => s.issues || []).find(issue => issue?.id?.toString() === activeId)}
+                  onClick={() => {}}
                 />
               ) : null}
             </DragOverlay>
@@ -758,7 +903,7 @@ const JiraSprintPlanningPage = () => {
         onClose={() => setShowSprintModal(false)}
         boardId={selectedBoard}
         onSprintCreated={(sprint) => {
-          setSprints(prev => [...prev, sprint]);
+          actions.addSprint(sprint);
         }}
       />
 
@@ -766,8 +911,23 @@ const JiraSprintPlanningPage = () => {
         isOpen={showCreateIssueModal}
         onClose={() => setShowCreateIssueModal(false)}
         boardId={selectedBoard}
-        onIssueCreated={(issue) => {
-          setBacklogIssues(prev => [...prev, issue]);
+        onIssueCreated={async (issue) => {
+          console.log('🎯 Issue created, refreshing data...', issue);
+          // Refresh data to ensure consistency
+          await apiActions.refreshAllData(selectedBoard);
+        }}
+      />
+
+      <IssueDetailModal
+        isOpen={showIssueDetailModal}
+        onClose={() => {
+          setShowIssueDetailModal(false);
+          setSelectedIssue(null);
+        }}
+        issueId={selectedIssue?.id}
+        onIssueUpdated={async (updatedIssue) => {
+          console.log('🔄 Issue updated, refreshing data...', updatedIssue);
+          await apiActions.refreshAllData(selectedBoard);
         }}
       />
     </div>

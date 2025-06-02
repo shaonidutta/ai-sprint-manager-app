@@ -25,11 +25,14 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
   // Fetch issue details
   const fetchIssue = async () => {
     if (!issueId) return;
-    
+
     try {
       setLoading(true);
+      console.log('🔍 Fetching issue details for ID:', issueId);
+      console.log('🔍 Auth token:', localStorage.getItem('token') ? 'Present' : 'Missing');
       const response = await api.issues.getById(issueId);
       const issueData = response.data.data.issue;
+      console.log('✅ Issue data received:', issueData);
       setIssue(issueData);
       
       // Initialize edit form
@@ -45,7 +48,12 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
       
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch issue:', err);
+      console.error('❌ Failed to fetch issue:', err);
+      console.error('❌ Error details:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
       setError('Failed to load issue details. Please try again.');
     } finally {
       setLoading(false);
