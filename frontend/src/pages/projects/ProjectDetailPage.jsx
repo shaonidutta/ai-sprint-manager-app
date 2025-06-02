@@ -12,6 +12,8 @@ const ProjectDetailPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [boards, setBoards] = useState([]);
   const [boardLoading, setBoardLoading] = useState(false);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamLoading, setTeamLoading] = useState(false);
 
   // Fetch project details
   const fetchProject = async () => {
@@ -54,12 +56,32 @@ const ProjectDetailPage = () => {
     }
   };
 
+  // Fetch team members for the project
+  const fetchTeamMembers = async () => {
+    try {
+      setTeamLoading(true);
+      const response = await api.projects.getTeamMembers(id);
+      setTeamMembers(response.data.data.team_members || []);
+    } catch (err) {
+      console.error('Failed to fetch team members:', err);
+    } finally {
+      setTeamLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchProject();
       fetchBoards();
     }
   }, [id]);
+
+  // Fetch team members when team tab is active
+  useEffect(() => {
+    if (activeTab === 'team' && id) {
+      fetchTeamMembers();
+    }
+  }, [activeTab, id]);
 
 
 
@@ -77,6 +99,23 @@ const ProjectDetailPage = () => {
       .map(word => word.charAt(0).toUpperCase())
       .slice(0, 2)
       .join('');
+  };
+
+  const getInitials = (firstName, lastName) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  };
+
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'Admin':
+        return 'bg-red-100 text-red-800';
+      case 'Project Manager':
+        return 'bg-blue-100 text-blue-800';
+      case 'Developer':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-neutral-100 text-neutral-800';
+    }
   };
 
   if (loading) {
@@ -411,26 +450,76 @@ const ProjectDetailPage = () => {
 
 
         {activeTab === 'team' && (
-          <Card className="p-12 text-center border-0 shadow-sm">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
+          <Card className="border-0 shadow-sm">
+            <div className="p-6 border-b border-neutral-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-semibold text-neutral-900">Team Members ({teamMembers.length})</h3>
+                  <p className="text-neutral-600 mt-1">Manage your project team members and their roles</p>
+                </div>
+                <Button
+                  onClick={() => navigate(`/projects/${id}/team`)}
+                  className="transition-all duration-150 hover:shadow-md"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                  Manage Team
+                </Button>
               </div>
-              <h3 className="text-2xl font-semibold text-neutral-900 mb-3">Team Management</h3>
-              <p className="text-neutral-600 mb-8 text-lg leading-relaxed">
-                Manage your project team members, assign roles, and control permissions for collaborative work.
-              </p>
-              <Button
-                onClick={() => navigate(`/projects/${id}/team`)}
-                className="transition-all duration-150 hover:shadow-md min-h-[44px] px-8"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-                Manage Team
-              </Button>
+            </div>
+
+            <div className="p-6">
+              {teamLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, index) => (
+                    <div key={index} className="animate-pulse">
+                      <div className="flex items-center space-x-4 p-4 border border-neutral-200 rounded-lg">
+                        <div className="w-12 h-12 bg-neutral-200 rounded-full"></div>
+                        <div className="flex-1">
+                          <div className="h-4 bg-neutral-200 rounded w-1/3 mb-2"></div>
+                          <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
+                        </div>
+                        <div className="w-20 h-6 bg-neutral-200 rounded-full"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : teamMembers.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
+                  </div>
+                  <h4 className="text-lg font-medium text-neutral-900 mb-2">No team members</h4>
+                  <p className="text-neutral-600 mb-6">Get started by inviting your first team member.</p>
+                  <Button onClick={() => navigate(`/projects/${id}/team`)}>
+                    Invite Team Member
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {teamMembers.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-150">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-primary-500 text-white rounded-full flex items-center justify-center font-medium text-lg">
+                          {getInitials(member.first_name, member.last_name)}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-neutral-900">
+                            {member.first_name} {member.last_name}
+                          </h4>
+                          <p className="text-sm text-neutral-500">{member.email}</p>
+                        </div>
+                      </div>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${getRoleColor(member.role)}`}>
+                        {member.role}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
         )}
@@ -582,33 +671,7 @@ const ProjectDetailPage = () => {
               </div>
             </div>
 
-            {/* AI Dashboard Link */}
-            <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-lg transition-all duration-300">
-              <div className="p-8">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-6 lg:space-y-0">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-semibold text-neutral-900">AI Features Dashboard</h3>
-                      <p className="text-neutral-600 mt-1 text-lg">View all AI insights and analytics in one comprehensive dashboard</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate(`/ai/dashboard/${id}`)}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-4 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium min-h-[44px] hover:shadow-md"
-                  >
-                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    Open Dashboard
-                  </button>
-                </div>
-              </div>
-            </div>
+
           </div>
         )}
 

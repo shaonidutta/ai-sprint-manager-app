@@ -49,6 +49,17 @@ router.get('/',
 );
 
 /**
+ * @route   GET /api/v1/projects/:id/stats
+ * @desc    Get project statistics
+ * @access  Private
+ */
+router.get('/:id/stats',
+  authMiddleware.authenticate,
+  validateParams(projectIdSchema),
+  projectController.getProjectStats
+);
+
+/**
  * @route   GET /api/v1/projects/:id
  * @desc    Get project by ID
  * @access  Private

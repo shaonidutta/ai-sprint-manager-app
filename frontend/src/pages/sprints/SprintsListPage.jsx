@@ -59,6 +59,15 @@ const SprintsListPage = () => {
     fetchProjects();
   }, []);
 
+  // Auto-select first project when projects are loaded
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProject && !projectId) {
+      const firstProject = projects[0];
+      setSelectedProject(firstProject.id.toString());
+      navigate(`/sprints?project=${firstProject.id}`, { replace: true });
+    }
+  }, [projects, selectedProject, projectId, navigate]);
+
   useEffect(() => {
     if (selectedProject) {
       fetchSprints(selectedProject);
@@ -117,33 +126,34 @@ const SprintsListPage = () => {
   const selectedProjectData = projects.find(p => p.id.toString() === selectedProject);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Page Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Sprints</h1>
-          <p className="text-neutral-600">Manage your project sprints and iterations</p>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold text-neutral-900">Sprints</h1>
+          <p className="text-neutral-600 text-lg">Manage your project sprints and iterations</p>
         </div>
         <Button
           onClick={() => navigate(`/sprints/planning?project=${selectedProject}`)}
           disabled={!selectedProject}
+          className="w-full sm:w-auto"
         >
           Sprint Planning
         </Button>
       </div>
 
       {/* Project Selection and Search */}
-      <Card className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <Card className="p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
-            <label htmlFor="project" className="block text-sm font-medium text-neutral-700 mb-1">
+            <label htmlFor="project" className="block text-sm font-semibold text-neutral-700 mb-2">
               Select Project
             </label>
             <select
               id="project"
               value={selectedProject}
               onChange={handleProjectChange}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-150 bg-white text-neutral-900"
             >
               <option value="">Choose a project...</option>
               {projects.map((project) => (
@@ -153,18 +163,19 @@ const SprintsListPage = () => {
               ))}
             </select>
           </div>
-          
+
           {selectedProject && (
             <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="search" className="block text-sm font-semibold text-neutral-700 mb-2">
                 Search Sprints
               </label>
               <Input
                 id="search"
                 name="search"
-                placeholder="Search sprints..."
+                placeholder="Search by name or goal..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-4 py-3 rounded-lg"
               />
             </div>
           )}
@@ -173,15 +184,15 @@ const SprintsListPage = () => {
 
       {/* Project Info */}
       {selectedProjectData && (
-        <Card className="p-4 bg-primary-50 border-primary-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary-500 text-white rounded-md flex items-center justify-center font-medium">
+        <Card className="p-6 bg-primary-50 border-primary-200 shadow-sm">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-primary-500 text-white rounded-lg flex items-center justify-center font-semibold text-lg shadow-sm">
               {selectedProjectData.project_key}
             </div>
-            <div>
-              <h3 className="font-medium text-neutral-900">{selectedProjectData.name}</h3>
+            <div className="flex-1">
+              <h3 className="font-semibold text-neutral-900 text-lg">{selectedProjectData.name}</h3>
               {selectedProjectData.description && (
-                <p className="text-sm text-neutral-600">{selectedProjectData.description}</p>
+                <p className="text-neutral-600 mt-1 leading-relaxed">{selectedProjectData.description}</p>
               )}
             </div>
           </div>
@@ -190,107 +201,145 @@ const SprintsListPage = () => {
 
       {/* Error Message */}
       {error && (
-        <Card className="p-4 border-error-200 bg-error-50">
-          <p className="text-error-700">{error}</p>
+        <Card className="p-6 border-red-200 bg-red-50 shadow-sm">
+          <div className="flex items-center space-x-3">
+            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-red-700 font-medium">{error}</p>
+          </div>
         </Card>
       )}
 
-      {/* Sprints Grid */}
+      {/* Sprints List */}
       {!selectedProject ? (
-        <Card className="p-12 text-center">
+        <Card className="p-16 text-center shadow-sm">
           <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">Select a project</h3>
-            <p className="text-neutral-600">Choose a project from the dropdown above to view its sprints.</p>
+            <h3 className="text-xl font-semibold text-neutral-900 mb-3">Select a project</h3>
+            <p className="text-neutral-600 text-lg leading-relaxed">Choose a project from the dropdown above to view its sprints.</p>
           </div>
         </Card>
       ) : loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="divide-y divide-neutral-100">
           {[...Array(6)].map((_, index) => (
-            <Card key={index} className="p-6 animate-pulse">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-neutral-200 rounded-md"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-neutral-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
+            <div key={index} className="p-6">
+              <div className="animate-pulse">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 flex-1">
+                    <div className="w-12 h-12 bg-neutral-200 rounded-md"></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="h-5 bg-neutral-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-neutral-200 rounded w-1/2 mb-3"></div>
+                      <div className="flex space-x-4">
+                        <div className="h-3 bg-neutral-200 rounded w-20"></div>
+                        <div className="h-3 bg-neutral-200 rounded w-20"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-20 h-6 bg-neutral-200 rounded-full"></div>
+                    <div className="w-5 h-5 bg-neutral-200 rounded"></div>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="h-3 bg-neutral-200 rounded"></div>
-                <div className="h-3 bg-neutral-200 rounded w-5/6"></div>
-              </div>
-            </Card>
+            </div>
           ))}
-        </div>
+        </Card>
       ) : filteredSprints.length === 0 ? (
-        <Card className="p-12 text-center">
+        <Card className="p-16 text-center shadow-sm">
           <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">No sprints found</h3>
-            <p className="text-neutral-600 mb-6">
+            <h3 className="text-xl font-semibold text-neutral-900 mb-3">No sprints found</h3>
+            <p className="text-neutral-600 text-lg leading-relaxed mb-8">
               {searchTerm ? 'No sprints match your search criteria.' : 'Get started by creating your first sprint.'}
             </p>
             {!searchTerm && (
-              <Button onClick={() => navigate('/sprints/new')}>
+              <Button
+                onClick={() => navigate('/sprints/new')}
+                className="px-6 py-3"
+              >
                 Create Your First Sprint
               </Button>
             )}
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="divide-y divide-neutral-100">
           {filteredSprints.map((sprint) => (
-            <Card 
-              key={sprint.id} 
-              className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => navigate(`/sprints/${sprint.id}`)}
+            <div
+              key={sprint.id}
+              className="group p-4 sm:p-6 hover:bg-neutral-50 hover:shadow-sm transition-all duration-150 cursor-pointer min-h-[44px] touch-manipulation border-l-4 border-transparent hover:border-primary-500"
+              onClick={() => navigate(`/sprints/planning?project=${selectedProject}`)}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-secondary-500 text-white rounded-md flex items-center justify-center font-medium">
+              <div className="flex items-start sm:items-center justify-between">
+                {/* Left section - Sprint info */}
+                <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                  {/* Sprint avatar */}
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-secondary-500 group-hover:bg-secondary-600 text-white rounded-lg flex items-center justify-center font-medium text-sm sm:text-lg shadow-sm group-hover:shadow-md flex-shrink-0 transition-all duration-150">
                     {getSprintInitials(sprint.name)}
                   </div>
+
+                  {/* Sprint details */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-medium text-neutral-900 truncate">
-                      {sprint.name}
-                    </h3>
-                    <p className="text-sm text-neutral-500">
-                      Sprint
-                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-1">
+                      <h3 className="text-base sm:text-lg font-semibold text-neutral-900 truncate group-hover:text-primary-600 transition-colors duration-150">
+                        {sprint.name}
+                      </h3>
+                      <span className={`inline-block mt-1 sm:mt-0 px-2 sm:px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(sprint.status)} w-fit group-hover:shadow-sm transition-shadow duration-150`}>
+                        {sprint.status}
+                      </span>
+                    </div>
+
+                    {sprint.goal && (
+                      <p className="text-neutral-600 text-sm mb-2 sm:mb-3 line-clamp-2 leading-relaxed">
+                        {sprint.goal}
+                      </p>
+                    )}
+
+                    {/* Sprint dates */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-1 sm:space-y-0 text-xs sm:text-sm text-neutral-500">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>Start: {formatDate(sprint.start_date)}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>End: {formatDate(sprint.end_date)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(sprint.status)}`}>
-                  {sprint.status}
-                </span>
-              </div>
-              
-              {sprint.goal && (
-                <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
-                  {sprint.goal}
-                </p>
-              )}
-              
-              <div className="space-y-2 text-sm text-neutral-500">
-                <div className="flex justify-between">
-                  <span>Start Date:</span>
-                  <span>{formatDate(sprint.start_date)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>End Date:</span>
-                  <span>{formatDate(sprint.end_date)}</span>
+
+                {/* Right section - Action indicator */}
+                <div className="flex items-center space-x-3 ml-2 sm:ml-4 flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-neutral-100 group-hover:bg-primary-100 flex items-center justify-center transition-all duration-150">
+                    <svg
+                      className="w-4 h-4 text-neutral-400 group-hover:text-primary-600 transition-colors duration-150"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
-            </Card>
+            </div>
           ))}
-        </div>
+        </Card>
       )}
     </div>
   );

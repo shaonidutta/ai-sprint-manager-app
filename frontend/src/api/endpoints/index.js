@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id) => `/projects/${id}`,
     UPDATE: (id) => `/projects/${id}`,
     DELETE: (id) => `/projects/${id}`,
+    STATS: (id) => `/projects/${id}/stats`,
     MEMBERS: {
       LIST: (id) => `/projects/${id}/team`,
       ADD: (id) => `/projects/${id}/team`,
