@@ -15,9 +15,10 @@ const IssueList = ({ issues, onIssueClick, isLoading, error }) => {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filteredIssues = filteredIssues.filter(issue => 
+      filteredIssues = filteredIssues.filter(issue =>
         issue.title.toLowerCase().includes(query) ||
-        issue.key.toLowerCase().includes(query)
+        (issue.issue_key && issue.issue_key.toLowerCase().includes(query)) ||
+        issue.id.toString().includes(query)
       );
     }
 

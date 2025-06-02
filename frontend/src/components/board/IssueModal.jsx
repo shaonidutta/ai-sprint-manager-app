@@ -70,7 +70,7 @@ const IssueModal = ({
             {issue.type === 'bug' ? '🐛' : '✨'}
           </span>
           <div>
-            <div className="text-sm text-gray-500">{issue.key}</div>
+            <div className="text-sm text-gray-500">{issue.issue_key || `#${issue.id}`}</div>
             <h2 className="text-xl font-semibold text-gray-900">
               {issue.title}
             </h2>

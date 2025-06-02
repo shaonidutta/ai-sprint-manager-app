@@ -42,16 +42,16 @@ const IssueCard = ({ issue }) => {
   };
 
   const {
-    key,
+    issue_key,
     title,
-    type,
+    issue_type,
     status,
     priority,
     assignee,
-    updatedAt,
+    updated_at,
   } = issue;
 
-  const formattedDate = new Date(updatedAt).toLocaleDateString('en-US', {
+  const formattedDate = new Date(updated_at || issue.updated_at).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -69,8 +69,8 @@ const IssueCard = ({ issue }) => {
       <div className="space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-lg">{typeIcons[type] || '📄'}</span>
-            <span className="text-sm font-mono text-neutral-500">{key}</span>
+            <span className="text-lg">{typeIcons[issue_type] || '📄'}</span>
+            <span className="text-sm font-mono text-neutral-500">{issue_key || `#${issue.id}`}</span>
           </div>
           <div className="flex items-center space-x-2">
             <span
@@ -135,7 +135,7 @@ const IssueCard = ({ issue }) => {
             </span>
           </div>
           <time
-            dateTime={updatedAt}
+            dateTime={updated_at || issue.updated_at}
             className="text-xs text-gray-500"
             title="Last updated"
           >

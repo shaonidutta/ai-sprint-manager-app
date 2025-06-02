@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { ROUTES } from '../../routes/constants';
 import {
   HomeIcon, ViewBoardsIcon, ProjectIcon,
   SprintIcon, SettingsIcon
@@ -106,7 +105,7 @@ const Sidebar = ({ isMobile, isOpen, onClose }) => {
       <motion.aside
         ref={sidebarRef}
         className={`
-          bg-gray-900 text-white shadow-xl
+          bg-blue-600 text-white shadow-xl
           ${isCollapsed ? 'w-16' : 'w-64'}
           ${isMobile
             ? 'fixed top-0 left-0 h-screen z-40'
@@ -122,14 +121,14 @@ const Sidebar = ({ isMobile, isOpen, onClose }) => {
         }}
       >
         {/* Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-800 bg-gray-900">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-blue-500 bg-blue-600">
           {!isCollapsed && (
-            <span className="text-xl font-semibold text-white">Sprint Manager</span>
+            <span className="text-xl font-semibold text-white">SprintFlow</span>
           )}
           {!isMobile && (
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 rounded-md hover:bg-gray-800 transition-colors duration-150 text-gray-300 hover:text-white"
+              className="p-2 rounded-md hover:bg-blue-700 transition-colors duration-150 text-blue-200 hover:text-white"
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,7 +143,7 @@ const Sidebar = ({ isMobile, isOpen, onClose }) => {
           {isMobile && (
             <button
               onClick={onClose}
-              className="p-2 rounded-md hover:bg-gray-800 transition-colors duration-150 text-gray-300 hover:text-white"
+              className="p-2 rounded-md hover:bg-blue-700 transition-colors duration-150 text-blue-200 hover:text-white"
               aria-label="Close sidebar"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,11 +161,11 @@ const Sidebar = ({ isMobile, isOpen, onClose }) => {
                 key={id}
                 to={path}
                 className={({ isActive }) => `
-                  group flex items-center px-3 py-3 text-sm font-medium rounded-md
+                  group flex items-center px-3 py-2 text-sm font-medium rounded-md
                   transition-all duration-150 ease-in-out
                   ${isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-blue-700 text-white'
+                    : 'text-blue-100 hover:bg-blue-700 hover:text-white'
                   }
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
@@ -176,17 +175,11 @@ const Sidebar = ({ isMobile, isOpen, onClose }) => {
                   <>
                     <Icon className={`
                       h-5 w-5 flex-shrink-0 transition-colors duration-150
-                      ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'}
+                      ${isActive ? 'text-white' : 'text-blue-200 group-hover:text-white'}
                       ${isCollapsed ? '' : 'mr-3'}
                     `} />
                     {!isCollapsed && (
                       <span className="truncate">{label}</span>
-                    )}
-                    {!isCollapsed && (
-                      <div className={`
-                        ml-auto w-1 h-6 rounded-full transition-all duration-150
-                        ${isActive ? 'bg-blue-300' : 'bg-transparent'}
-                      `} />
                     )}
                   </>
                 )}
@@ -195,29 +188,29 @@ const Sidebar = ({ isMobile, isOpen, onClose }) => {
           </div>
 
           {/* User Profile */}
-          <div className="border-t border-gray-800 p-4 bg-gray-900">
+          <div className="border-t border-blue-500 p-4 bg-blue-600">
             {!isCollapsed ? (
-              <div className="flex items-center p-3 rounded-md hover:bg-gray-800 transition-colors duration-150 cursor-pointer">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-sm font-medium text-white shadow-sm">
+              <div className="flex items-center p-3 rounded-md hover:bg-blue-700 transition-colors duration-150 cursor-pointer">
+                <div className="w-10 h-10 rounded-full bg-blue-800 flex items-center justify-center text-sm font-medium text-white shadow-sm">
                   {user?.first_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <div className="ml-3 overflow-hidden flex-1">
                   <p className="text-sm font-medium text-white truncate">
                     {user?.first_name} {user?.last_name}
                   </p>
-                  <p className="text-xs text-gray-400 truncate">
+                  <p className="text-xs text-blue-200 truncate">
                     {user?.email}
                   </p>
                 </div>
                 <div className="ml-2">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
                   </svg>
                 </div>
               </div>
             ) : (
               <div className="flex justify-center">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-colors duration-150 cursor-pointer"
+                <div className="w-10 h-10 rounded-full bg-blue-800 flex items-center justify-center text-sm font-medium text-white shadow-sm hover:bg-blue-900 transition-colors duration-150 cursor-pointer"
                      title={`${user?.first_name} ${user?.last_name}`}>
                   {user?.first_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
                 </div>

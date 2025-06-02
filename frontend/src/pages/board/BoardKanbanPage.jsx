@@ -422,7 +422,7 @@ const BoardKanbanPage = () => {
 
 
   const getIssuesByStatus = (status) => {
-    return issues.filter(issue => issue.status === status);
+    return issues.filter(issue => issue && issue.status === status);
   };
 
   // Drag and drop handlers
@@ -530,9 +530,37 @@ const BoardKanbanPage = () => {
 
   // Handle issue update from modal
   const handleIssueUpdated = (updatedIssue) => {
-    setIssues(prev => prev.map(issue =>
-      issue.id === updatedIssue.id ? updatedIssue : issue
-    ));
+    console.log('🔄 Handling issue update:', updatedIssue);
+
+    if (!updatedIssue || !updatedIssue.id) {
+      console.error('❌ Invalid updated issue data:', updatedIssue);
+      return;
+    }
+
+    setIssues(prev => {
+      const newIssues = prev.map(issue => {
+        if (!issue || !issue.id) {
+          console.warn('⚠️ Found invalid issue in array:', issue);
+          return issue; // Keep invalid issues as-is to prevent crashes
+        }
+
+        if (issue.id === updatedIssue.id) {
+          // Ensure the updated issue has all required fields
+          const mergedIssue = {
+            ...issue, // Keep existing fields
+            ...updatedIssue, // Override with updated fields
+            issue_key: updatedIssue.issue_key || issue.issue_key || `#${updatedIssue.id}` // Ensure issue_key exists
+          };
+          console.log('✅ Updated issue:', mergedIssue);
+          return mergedIssue;
+        }
+
+        return issue;
+      }).filter(issue => issue && issue.id); // Filter out any null/undefined issues
+
+      console.log('🔄 New issues array length:', newIssues.length);
+      return newIssues;
+    });
   };
 
   // Helper functions for backlog view
@@ -753,7 +781,7 @@ const BoardKanbanPage = () => {
 
                       {/* Column Content */}
                       <SortableContext
-                        items={columnIssues.map(issue => issue.id.toString())}
+                        items={columnIssues.filter(issue => issue && issue.id).map(issue => issue.id.toString())}
                         strategy={verticalListSortingStrategy}
                       >
                         <DroppableColumn
@@ -784,7 +812,7 @@ const BoardKanbanPage = () => {
                                 )}
                               </div>
                             ) : (
-                              columnIssues.map((issue) => (
+                              columnIssues.filter(issue => issue && issue.id).map((issue) => (
                                 <DraggableIssueCard
                                   key={issue.id}
                                   issue={issue}
@@ -803,12 +831,17 @@ const BoardKanbanPage = () => {
 
               <DragOverlay>
                 {activeId ? (
-                  <DraggableIssueCard
-                    issue={issues.find(issue => issue.id.toString() === activeId)}
-                    onClick={() => {}}
-                    isDragOverlay={true}
-                    activeSprint={activeSprint}
-                  />
+                  (() => {
+                    const draggedIssue = issues.find(issue => issue && issue.id && issue.id.toString() === activeId);
+                    return draggedIssue ? (
+                      <DraggableIssueCard
+                        issue={draggedIssue}
+                        onClick={() => {}}
+                        isDragOverlay={true}
+                        activeSprint={activeSprint}
+                      />
+                    ) : null;
+                  })()
                 ) : null}
               </DragOverlay>
             </DndContext>
@@ -823,7 +856,7 @@ const BoardKanbanPage = () => {
               </div>
               
               <div className="divide-y divide-gray-200">
-                {issues.map((issue) => (
+                {issues.filter(issue => issue && issue.id).map((issue) => (
                   <div
                     key={issue.id}
                     className="px-6 py-4 hover:bg-gray-50 cursor-pointer"

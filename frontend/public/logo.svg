@@ -4,8 +4,8 @@
   <text x="10" y="35" font-family="Arial" font-weight="bold" font-size="32" fill="#0052CC">
     Sprint
   </text>
-  <!-- Manager text -->
+  <!-- Flow text -->
   <text x="100" y="35" font-family="Arial" font-weight="normal" font-size="32" fill="#253858">
-    Manager
+    Flow
   </text>
-</svg> 
+</svg>

@@ -96,7 +96,7 @@ const KanbanColumn = ({
                         </Tooltip>
                       )}
                       <span className="text-xs text-gray-500">
-                        {issue.key}
+                        {issue.issue_key || `#${issue.id}`}
                       </span>
                     </div>
                     {getPriorityBadge(issue.priority)}
