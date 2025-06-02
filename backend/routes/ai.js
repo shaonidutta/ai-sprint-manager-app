@@ -7,7 +7,23 @@ const aiController = require('../controllers/aiController');
 
 // Import middleware
 const authMiddleware = require('../middleware/auth');
-const { validateRequest } = require('../validators/userValidator');
+const { validationResult } = require('express-validator');
+
+// Validation middleware
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid input data',
+        details: errors.array()
+      }
+    });
+  }
+  next();
+};
 
 // Validation schemas
 const projectIdSchema = param('projectId')
@@ -88,7 +104,7 @@ const aiRateLimit = (req, res, next) => {
 router.get('/projects/:projectId/quota',
   authMiddleware.authenticate,
   projectIdSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.getQuotaStatus
 );
 
@@ -102,7 +118,7 @@ router.post('/projects/:projectId/sprint-plan',
   aiRateLimit,
   projectIdSchema,
   sprintPlanSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.generateSprintPlan
 );
 
@@ -116,7 +132,7 @@ router.post('/projects/:projectId/scope-creep',
   aiRateLimit,
   projectIdSchema,
   scopeCreepSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.detectScopeCreep
 );
 
@@ -129,7 +145,7 @@ router.post('/projects/:projectId/risk-assessment',
   authMiddleware.authenticate,
   aiRateLimit,
   projectIdSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.assessRisks
 );
 
@@ -143,7 +159,7 @@ router.post('/projects/:projectId/retrospective',
   aiRateLimit,
   projectIdSchema,
   retrospectiveSchema,
-  validateRequest,
+  handleValidationErrors,
   aiController.generateRetrospectiveInsights
 );
 

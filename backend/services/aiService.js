@@ -38,33 +38,44 @@ class AIService {
 
   async checkQuota(projectId) {
     try {
+      logger.info(`[checkQuota] Starting quota check for project ${projectId}`);
       const query = `
-        SELECT ai_requests_count, ai_requests_reset_date 
-        FROM projects 
+        SELECT ai_requests_count, ai_requests_reset_date
+        FROM projects
         WHERE id = ?
       `;
-      
+
+      logger.info(`[checkQuota] Executing database query`);
       const rows = await database.query(query, [projectId]);
+      logger.info(`[checkQuota] Database query result: ${JSON.stringify(rows)}`);
+
       if (rows.length === 0) {
+        logger.warn(`[checkQuota] Project ${projectId} not found`);
         throw new AppError('Project not found', 404);
       }
 
       const project = rows[0];
       const today = new Date();
       const resetDate = new Date(project.ai_requests_reset_date);
-      
+      logger.info(`[checkQuota] Project data: ${JSON.stringify(project)}, today: ${today}, resetDate: ${resetDate}`);
+
       // Check if quota period has expired
       const daysDiff = Math.floor((today - resetDate) / (1000 * 60 * 60 * 24));
+      logger.info(`[checkQuota] Days difference: ${daysDiff}, quotaResetDays: ${this.quotaResetDays}`);
+
       if (daysDiff >= this.quotaResetDays) {
+        logger.info(`[checkQuota] Quota period expired, resetting quota`);
         // Reset quota
         await database.query(
           'UPDATE projects SET ai_requests_count = 0, ai_requests_reset_date = CURDATE() WHERE id = ?',
           [projectId]
         );
+        logger.info(`[checkQuota] Quota reset completed`);
         return { remaining: this.quotaLimit, resetDate: today };
       }
 
       const remaining = Math.max(0, this.quotaLimit - project.ai_requests_count);
+      logger.info(`[checkQuota] Quota calculation: remaining=${remaining}, limit=${this.quotaLimit}, used=${project.ai_requests_count}`);
       return { remaining, resetDate };
     } catch (error) {
       logger.error('Error checking AI quota:', error);
