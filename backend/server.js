@@ -16,62 +16,68 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-app.use(helmet());
+// Simple CORS configuration for development
+app.use((req, res, next) => {
+  // Allow all origins in development
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-  message: {
-    success: false,
-    error: {
-      code: 'RATE_LIMIT_EXCEEDED',
-      message: 'Too many requests from this IP, please try again later.'
-    }
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
   }
+
+  next();
 });
-app.use('/api/', limiter);
 
-// CORS configuration
+// Backup CORS using cors middleware
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    const allowedOrigins = [
-      process.env.FRONTEND_URL || 'http://localhost:5173',
-      'http://localhost:3001', // Fallback for different dev setups
-      'http://localhost:5173', // Vite default port
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:3001'
-    ];
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      logger.warn(`CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-    'Origin'
-  ],
-  exposedHeaders: ['Authorization'],
-  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-  preflightContinue: false
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests explicitly
-app.options('*', cors(corsOptions));
+// Security middleware
+app.use(helmet());
+
+// Rate limiting - only for non-OPTIONS requests and in production
+if (process.env.NODE_ENV === 'production') {
+  const limiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+    message: {
+      success: false,
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests from this IP, please try again later.'
+      }
+    },
+    skip: (req) => req.method === 'OPTIONS' // Skip rate limiting for preflight requests
+  });
+  app.use('/api/', limiter);
+} else {
+  // Development mode - more lenient rate limiting
+  const devLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 1000, // Much higher limit for development
+    message: {
+      success: false,
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests from this IP, please try again later.'
+      }
+    },
+    skip: (req) => req.method === 'OPTIONS' // Skip rate limiting for preflight requests
+  });
+  app.use('/api/', devLimiter);
+}
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

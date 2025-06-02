@@ -87,20 +87,63 @@ const ProjectDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="animate-pulse">
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="w-16 h-16 bg-neutral-200 rounded-lg"></div>
-            <div className="flex-1">
-              <div className="h-8 bg-neutral-200 rounded w-1/3 mb-2"></div>
-              <div className="h-4 bg-neutral-200 rounded w-1/2"></div>
+          {/* Back Navigation Skeleton */}
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="w-6 h-6 bg-neutral-200 rounded"></div>
+            <div className="h-6 bg-neutral-200 rounded w-32"></div>
+          </div>
+
+          {/* Breadcrumb Skeleton */}
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="h-4 bg-neutral-200 rounded w-20"></div>
+            <div className="w-4 h-4 bg-neutral-200 rounded"></div>
+            <div className="h-4 bg-neutral-200 rounded w-32"></div>
+          </div>
+
+          {/* Header Skeleton */}
+          <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-8 mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-6 lg:space-y-0">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                <div className="w-20 h-20 bg-neutral-200 rounded-xl"></div>
+                <div className="space-y-3">
+                  <div className="h-10 bg-neutral-200 rounded w-64"></div>
+                  <div className="h-6 bg-neutral-200 rounded w-48"></div>
+                  <div className="h-4 bg-neutral-200 rounded w-96"></div>
+                </div>
+              </div>
+              <div className="flex space-x-3">
+                <div className="h-12 bg-neutral-200 rounded w-24"></div>
+                <div className="h-12 bg-neutral-200 rounded w-32"></div>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          {/* Tab Navigation Skeleton */}
+          <div className="bg-white rounded-xl shadow-sm border border-neutral-200 mb-8">
+            <div className="flex">
+              {[...Array(5)].map((_, index) => (
+                <div key={index} className="flex-1 p-4">
+                  <div className="h-6 bg-neutral-200 rounded w-16 mx-auto"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {[...Array(3)].map((_, index) => (
-              <Card key={index} className="p-6">
-                <div className="h-4 bg-neutral-200 rounded w-1/2 mb-4"></div>
-                <div className="h-8 bg-neutral-200 rounded w-1/4"></div>
+              <Card key={index} className="p-8 border-0 shadow-sm">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-neutral-200 rounded-lg"></div>
+                  <div className="h-6 bg-neutral-200 rounded w-32"></div>
+                </div>
+                <div className="space-y-4">
+                  <div className="h-4 bg-neutral-200 rounded w-full"></div>
+                  <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
+                  <div className="h-12 bg-neutral-200 rounded w-full"></div>
+                </div>
               </Card>
             ))}
           </div>
@@ -149,17 +192,35 @@ const ProjectDetailPage = () => {
     { id: 'overview', label: 'Overview' },
     { id: 'boards', label: 'Boards' },
     { id: 'team', label: 'Team' },
-    { id: 'ai', label: 'AI Features' },
-    { id: 'settings', label: 'Settings' }
+    { id: 'ai', label: 'AI Features' }
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Navigation */}
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate('/projects')}
+            className="flex items-center space-x-2 text-neutral-600 hover:text-neutral-900 transition-colors duration-150 group"
+            aria-label="Back to Projects"
+          >
+            <svg
+              className="w-5 h-5 transition-transform duration-150 group-hover:-translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="font-medium">Back to Projects</span>
+          </button>
+        </div>
+
         {/* Breadcrumb */}
         <nav className="flex" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-4">
             <li>
-              <Link to="/projects" className="text-neutral-500 hover:text-neutral-700">
+              <Link to="/projects" className="text-neutral-500 hover:text-neutral-700 transition-colors duration-150">
                 Projects
               </Link>
             </li>
@@ -175,45 +236,72 @@ const ProjectDetailPage = () => {
         </nav>
 
         {/* Project Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-primary-500 text-white rounded-lg flex items-center justify-center text-xl font-bold">
-              {getProjectInitials(project.name)}
+        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-6 lg:space-y-0">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                {getProjectInitials(project.name)}
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-4xl font-bold text-neutral-900 leading-tight">{project.name}</h1>
+                <div className="flex items-center space-x-3">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-neutral-100 text-neutral-800">
+                    {project.project_key}
+                  </span>
+                  <span className="text-neutral-500">•</span>
+                  <span className="text-neutral-600 text-sm">
+                    Created {formatDate(project.created_at)}
+                  </span>
+                </div>
+                {project.description && (
+                  <p className="text-neutral-700 text-lg leading-relaxed max-w-2xl">{project.description}</p>
+                )}
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-neutral-900">{project.name}</h1>
-              <p className="text-neutral-600">{project.project_key}</p>
-              {project.description && (
-                <p className="text-neutral-600 mt-1">{project.description}</p>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/projects/${id}/settings`)}
+                className="transition-all duration-150 hover:shadow-md"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
+              </Button>
+              {boards.length > 0 && (
+                <Button
+                  onClick={() => setActiveTab('boards')}
+                  className="transition-all duration-150 hover:shadow-md"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
+                  </svg>
+                  View Boards ({boards.length})
+                </Button>
               )}
             </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" onClick={() => navigate(`/projects/${id}/settings`)}>
-              Settings
-            </Button>
-            {boards.length > 0 && (
-              <Button onClick={() => setActiveTab('boards')}>
-                View Boards ({boards.length})
-              </Button>
-            )}
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-neutral-200">
-          <nav className="-mb-px flex space-x-8">
+        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+          <nav className="flex">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex-1 py-4 px-6 font-medium text-sm transition-all duration-150 relative ${
                   activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                    ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-500'
+                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 border-b-2 border-transparent'
                 }`}
               >
-                {tab.label}
+                <span className="relative z-10">{tab.label}</span>
+                {activeTab === tab.id && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary-50 to-primary-100 opacity-50"></div>
+                )}
               </button>
             ))}
           </nav>
@@ -221,64 +309,113 @@ const ProjectDetailPage = () => {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-medium text-neutral-900 mb-4">Project Details</h3>
-              <dl className="space-y-3">
-                <div>
-                  <dt className="text-sm font-medium text-neutral-500">Created</dt>
-                  <dd className="text-sm text-neutral-900">{formatDate(project.created_at)}</dd>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <Card className="p-8 hover:shadow-lg transition-shadow duration-300 border-0 shadow-sm">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-neutral-900">Project Details</h3>
+              </div>
+              <dl className="space-y-4">
+                <div className="border-b border-neutral-100 pb-3">
+                  <dt className="text-sm font-medium text-neutral-500 mb-1">Created</dt>
+                  <dd className="text-base text-neutral-900 font-medium">{formatDate(project.created_at)}</dd>
+                </div>
+                <div className="border-b border-neutral-100 pb-3">
+                  <dt className="text-sm font-medium text-neutral-500 mb-1">Last Updated</dt>
+                  <dd className="text-base text-neutral-900 font-medium">{formatDate(project.updated_at)}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-neutral-500">Last Updated</dt>
-                  <dd className="text-sm text-neutral-900">{formatDate(project.updated_at)}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-neutral-500">Project Key</dt>
-                  <dd className="text-sm text-neutral-900 font-mono">{project.project_key}</dd>
+                  <dt className="text-sm font-medium text-neutral-500 mb-1">Project Key</dt>
+                  <dd className="text-base text-neutral-900 font-mono font-semibold bg-neutral-50 px-3 py-2 rounded-lg inline-block">
+                    {project.project_key}
+                  </dd>
                 </div>
               </dl>
             </Card>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-medium text-neutral-900 mb-4">Quick Stats</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-neutral-500">Total Issues</span>
-                  <span className="text-sm font-medium text-neutral-900">0</span>
+            <Card className="p-8 hover:shadow-lg transition-shadow duration-300 border-0 shadow-sm">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-neutral-500">Active Sprints</span>
-                  <span className="text-sm font-medium text-neutral-900">0</span>
+                <h3 className="text-xl font-semibold text-neutral-900">Quick Stats</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-neutral-50 rounded-lg">
+                  <span className="text-sm font-medium text-neutral-600">Total Issues</span>
+                  <span className="text-lg font-bold text-neutral-900">0</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-neutral-500">Team Members</span>
-                  <span className="text-sm font-medium text-neutral-900">1</span>
+                <div className="flex justify-between items-center p-3 bg-neutral-50 rounded-lg">
+                  <span className="text-sm font-medium text-neutral-600">Active Sprints</span>
+                  <span className="text-lg font-bold text-neutral-900">0</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-neutral-50 rounded-lg">
+                  <span className="text-sm font-medium text-neutral-600">Team Members</span>
+                  <span className="text-lg font-bold text-neutral-900">1</span>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-medium text-neutral-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
+            <Card className="p-8 hover:shadow-lg transition-shadow duration-300 border-0 shadow-sm">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-neutral-900">Quick Actions</h3>
+              </div>
+              <div className="space-y-4">
                 {boards.length > 0 ? (
-                  <Button fullWidth variant="outline" onClick={() => setActiveTab('boards')}>
+                  <Button
+                    fullWidth
+                    variant="outline"
+                    onClick={() => setActiveTab('boards')}
+                    className="h-12 transition-all duration-150 hover:shadow-md hover:scale-105"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
+                    </svg>
                     View Boards ({boards.length})
                   </Button>
                 ) : (
-                  <Button fullWidth variant="outline" onClick={() => setShowCreateBoardModal(true)}>
+                  <Button
+                    fullWidth
+                    variant="outline"
+                    onClick={() => setShowCreateBoardModal(true)}
+                    className="h-12 transition-all duration-150 hover:shadow-md hover:scale-105"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
                     Create First Board
                   </Button>
                 )}
-                <Button fullWidth variant="outline" onClick={() => navigate(`/projects/${id}/team`)}>
+                <Button
+                  fullWidth
+                  variant="outline"
+                  onClick={() => navigate(`/projects/${id}/team`)}
+                  className="h-12 transition-all duration-150 hover:shadow-md hover:scale-105"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
                   Manage Team
                 </Button>
-                <Button 
-                  fullWidth 
-                  variant="outline" 
+                <Button
+                  fullWidth
                   onClick={() => setActiveTab('ai')}
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700"
+                  className="h-12 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transition-all duration-150 hover:shadow-md hover:scale-105"
                 >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
                   AI Features
                 </Button>
               </div>
@@ -287,77 +424,137 @@ const ProjectDetailPage = () => {
         )}
 
         {activeTab === 'boards' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Boards Header */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-neutral-900">Project Boards</h2>
-              <Button onClick={() => setShowCreateBoardModal(true)}>
-                Create Board
-              </Button>
+            <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                <div>
+                  <h2 className="text-2xl font-bold text-neutral-900">Project Boards</h2>
+                  <p className="text-neutral-600 mt-1">Manage and organize your project work with boards</p>
+                </div>
+                <Button
+                  onClick={() => setShowCreateBoardModal(true)}
+                  className="transition-all duration-150 hover:shadow-md min-h-[44px]"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Board
+                </Button>
+              </div>
             </div>
 
             {boardLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(3)].map((_, index) => (
-                  <Card key={index} className="p-6 animate-pulse">
-                    <div className="h-4 bg-neutral-200 rounded w-3/4 mb-4"></div>
-                    <div className="h-3 bg-neutral-200 rounded w-1/2 mb-2"></div>
-                    <div className="h-8 bg-neutral-200 rounded w-1/4"></div>
+                  <Card key={index} className="p-6 animate-pulse border-0 shadow-sm">
+                    <div className="h-6 bg-neutral-200 rounded w-3/4 mb-4"></div>
+                    <div className="h-4 bg-neutral-200 rounded w-1/2 mb-4"></div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="h-12 bg-neutral-200 rounded"></div>
+                      <div className="h-12 bg-neutral-200 rounded"></div>
+                      <div className="h-12 bg-neutral-200 rounded"></div>
+                    </div>
                   </Card>
                 ))}
               </div>
             ) : boards.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
                 {boards.filter(board => board && board.id && board.name).map((board) => (
-                  <Card
+                  <div
                     key={board.id}
-                    className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                    className="
+                      group p-6 border-b border-neutral-200 last:border-b-0
+                      hover:bg-neutral-50 transition-all duration-150 ease-in-out
+                      cursor-pointer min-h-[44px]
+                    "
                     onClick={() => {
-                      console.log('[ProjectDetailPage] Navigating to board:', board.id);
-                      navigate(`/boards/${board.id}`);
+                      console.log('[ProjectDetailPage] Navigating to board:', board.id, 'for project:', id);
+                      navigate(`/board?project=${id}`);
                     }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/board?project=${id}`);
+                      }
+                    }}
+                    aria-label={`Open ${board.name} board`}
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-neutral-900">{board.name}</h3>
-                      {board.is_default && (
-                        <span className="text-xs bg-primary-100 text-primary-800 px-2 py-1 rounded-full">
-                          Default
-                        </span>
-                      )}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      {/* Board Information */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="
+                            text-lg font-semibold text-neutral-900
+                            truncate
+                            group-hover:text-primary-600 transition-colors duration-150
+                          ">
+                            {board.name}
+                          </h3>
+                          {board.is_default && (
+                            <span className="text-xs bg-primary-100 text-primary-800 px-3 py-1 rounded-full font-medium flex-shrink-0">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        {board.description && (
+                          <p className="text-neutral-600 text-sm line-clamp-2 leading-relaxed">
+                            {board.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Action Button */}
+                      <div className="flex-shrink-0 self-start sm:self-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/board?project=${id}`);
+                          }}
+                          className="
+                            inline-flex items-center gap-2 px-4 py-2
+                            text-sm font-medium text-neutral-700
+                            border border-neutral-300 rounded-lg bg-white
+                            hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700
+                            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+                            transition-all duration-150 ease-in-out
+                            group-hover:border-primary-300 group-hover:text-primary-700
+                            w-full sm:w-auto justify-center sm:justify-start
+                            min-h-[44px]
+                          "
+                          aria-label={`Open ${board.name} board`}
+                        >
+                          Open Board
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    {board.description && (
-                      <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
-                        {board.description}
-                      </p>
-                    )}
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="p-2 bg-neutral-50 rounded">
-                        <div className="text-lg font-semibold text-neutral-900">0</div>
-                        <div className="text-xs text-neutral-600">To Do</div>
-                      </div>
-                      <div className="p-2 bg-blue-50 rounded">
-                        <div className="text-lg font-semibold text-neutral-900">0</div>
-                        <div className="text-xs text-neutral-600">In Progress</div>
-                      </div>
-                      <div className="p-2 bg-green-50 rounded">
-                        <div className="text-lg font-semibold text-neutral-900">0</div>
-                        <div className="text-xs text-neutral-600">Done</div>
-                      </div>
-                    </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             ) : (
-              <Card className="p-12 text-center">
+              <Card className="p-12 text-center border-0 shadow-sm">
                 <div className="max-w-md mx-auto">
-                  <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-neutral-900 mb-2">No Boards Found</h3>
-                  <p className="text-neutral-600 mb-6">This project doesn't have any boards yet. Create your first board to start managing issues.</p>
-                  <Button onClick={() => setShowCreateBoardModal(true)}>
+                  <h3 className="text-2xl font-semibold text-neutral-900 mb-3">No Boards Found</h3>
+                  <p className="text-neutral-600 mb-8 text-lg leading-relaxed">
+                    This project doesn't have any boards yet. Create your first board to start managing issues and organizing your work.
+                  </p>
+                  <Button
+                    onClick={() => setShowCreateBoardModal(true)}
+                    className="transition-all duration-150 hover:shadow-md min-h-[44px] px-8"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
                     Create First Board
                   </Button>
                 </div>
@@ -367,116 +564,171 @@ const ProjectDetailPage = () => {
         )}
 
         {activeTab === 'team' && (
-          <Card className="p-12 text-center">
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">Team Management</h3>
-            <p className="text-neutral-600 mb-6">Manage your project team members and permissions.</p>
-            <Button onClick={() => navigate(`/projects/${id}/team`)}>
-              Manage Team
-            </Button>
+          <Card className="p-12 text-center border-0 shadow-sm">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-semibold text-neutral-900 mb-3">Team Management</h3>
+              <p className="text-neutral-600 mb-8 text-lg leading-relaxed">
+                Manage your project team members, assign roles, and control permissions for collaborative work.
+              </p>
+              <Button
+                onClick={() => navigate(`/projects/${id}/team`)}
+                className="transition-all duration-150 hover:shadow-md min-h-[44px] px-8"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+                Manage Team
+              </Button>
+            </div>
           </Card>
         )}
 
-        {activeTab === 'settings' && (
-          <Card className="p-12 text-center">
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">Project Settings</h3>
-            <p className="text-neutral-600 mb-6">Configure your project settings and preferences.</p>
-            <Button onClick={() => navigate(`/projects/${id}/settings`)}>
-              Open Settings
-            </Button>
+        {false && activeTab === 'settings' && (
+          <Card className="p-12 text-center border-0 shadow-sm">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-semibold text-neutral-900 mb-3">Project Settings</h3>
+              <p className="text-neutral-600 mb-8 text-lg leading-relaxed">
+                Configure your project settings, preferences, and advanced options to customize your workflow.
+              </p>
+              <Button
+                onClick={() => navigate(`/projects/${id}/settings`)}
+                className="transition-all duration-150 hover:shadow-md min-h-[44px] px-8"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Open Settings
+              </Button>
+            </div>
           </Card>
         )}
 
         {activeTab === 'ai' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Header */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">AI Features</h2>
-              <p className="text-gray-600">
-                Enhance your project management with our AI-powered features
-              </p>
+            <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-8">
+              <div className="text-center max-w-3xl mx-auto">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-bold text-neutral-900 mb-4">AI-Powered Features</h2>
+                <p className="text-neutral-600 text-lg leading-relaxed">
+                  Enhance your project management with intelligent insights, automated analysis, and data-driven recommendations
+                </p>
+              </div>
             </div>
 
             {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Sprint Planning Assistant */}
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-4xl">📅</span>
+              <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 group">
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
                     <button
                       onClick={() => navigate(`/ai/sprint-planning/${id}`)}
-                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium min-h-[44px]"
                     >
                       Try Now
                     </button>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mt-4">
+                  <h3 className="text-2xl font-semibold text-white mb-3">
                     Sprint Planning Assistant
                   </h3>
-                  <p className="text-white text-opacity-90 mt-2">
+                  <p className="text-white text-opacity-90 leading-relaxed">
                     AI-powered sprint planning suggestions based on team velocity, capacity, and historical data.
                   </p>
                 </div>
               </div>
 
               {/* Scope Creep Detection */}
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-red-500 to-pink-600 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-4xl">🔍</span>
+              <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 group">
+                <div className="bg-gradient-to-br from-red-500 to-pink-600 p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
                     <button
                       onClick={() => navigate(`/ai/scope-creep/${id}`)}
-                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium min-h-[44px]"
                     >
                       Analyze Now
                     </button>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mt-4">
+                  <h3 className="text-2xl font-semibold text-white mb-3">
                     Scope Creep Detection
                   </h3>
-                  <p className="text-white text-opacity-90 mt-2">
+                  <p className="text-white text-opacity-90 leading-relaxed">
                     Early detection of potential scope creep using AI analysis of requirements and changes.
                   </p>
                 </div>
               </div>
 
               {/* Risk Assessment */}
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-yellow-500 to-orange-600 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-4xl">⚠️</span>
+              <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 group">
+                <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
                     <button
                       onClick={() => navigate(`/ai/risk-assessment/${id}`)}
-                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium min-h-[44px]"
                     >
                       Assess Risks
                     </button>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mt-4">
+                  <h3 className="text-2xl font-semibold text-white mb-3">
                     Risk Assessment
                   </h3>
-                  <p className="text-white text-opacity-90 mt-2">
+                  <p className="text-white text-opacity-90 leading-relaxed">
                     AI-driven project risk assessment and mitigation recommendations.
                   </p>
                 </div>
               </div>
 
               {/* Sprint Retrospective */}
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-4xl">🎯</span>
+              <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 group">
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
                     <button
                       onClick={() => navigate(`/ai/retrospective/${id}`)}
-                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium min-h-[44px]"
                     >
                       Generate Insights
                     </button>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mt-4">
+                  <h3 className="text-2xl font-semibold text-white mb-3">
                     Sprint Retrospective Insights
                   </h3>
-                  <p className="text-white text-opacity-90 mt-2">
+                  <p className="text-white text-opacity-90 leading-relaxed">
                     AI analysis of sprint performance and team collaboration patterns.
                   </p>
                 </div>
@@ -484,17 +736,27 @@ const ProjectDetailPage = () => {
             </div>
 
             {/* AI Dashboard Link */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 mt-6">
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">AI Features Dashboard</h3>
-                    <p className="text-gray-600 mt-2">View all AI insights and analytics in one place</p>
+            <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-lg transition-all duration-300">
+              <div className="p-8">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-6 lg:space-y-0">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold text-neutral-900">AI Features Dashboard</h3>
+                      <p className="text-neutral-600 mt-1 text-lg">View all AI insights and analytics in one comprehensive dashboard</p>
+                    </div>
                   </div>
                   <button
                     onClick={() => navigate(`/ai/dashboard/${id}`)}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors duration-200"
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-4 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium min-h-[44px] hover:shadow-md"
                   >
+                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
                     Open Dashboard
                   </button>
                 </div>
