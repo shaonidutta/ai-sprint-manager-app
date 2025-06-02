@@ -10,7 +10,15 @@ class IssueController {
     try {
       const { boardId } = req.params;
       const userId = req.user.id;
-      const { page, limit, status, assigneeId, sprintId, search, issueType, priority } = req.query;
+      const { page, limit, status, assigneeId, sprintId, search, issueType, priority, backlogOnly } = req.query;
+
+      console.log('🔍 BOARD ISSUES REQUEST:', {
+        boardId,
+        backlogOnly,
+        backlogOnlyType: typeof backlogOnly,
+        backlogOnlyValue: backlogOnly === 'true',
+        allQueryParams: req.query
+      });
 
       const options = {
         page: parseInt(page) || 1,
@@ -20,10 +28,22 @@ class IssueController {
         sprintId: sprintId ? parseInt(sprintId) : undefined,
         search: search || '',
         issueType,
-        priority
+        priority,
+        backlogOnly: backlogOnly === 'true'
       };
 
+      console.log('🔍 PROCESSED OPTIONS:', options);
+
       const result = await Issue.findByBoardId(boardId, userId, options);
+
+      // Add cache-busting headers for backlog queries to ensure fresh data
+      if (backlogOnly) {
+        res.set({
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        });
+      }
 
       res.status(200).json(formatSuccessResponse({
         message: 'Issues retrieved successfully',
@@ -122,21 +142,37 @@ class IssueController {
     try {
       const { id } = req.params;
       const userId = req.user.id;
-      const { 
-        title, 
-        description, 
-        issueType, 
-        status, 
-        priority, 
-        assigneeId, 
-        storyPoints, 
-        originalEstimate, 
+      console.log('🔍 ISSUE UPDATE REQUEST BODY:', req.body);
+
+      const {
+        title,
+        description,
+        issueType,
+        status,
+        priority,
+        assigneeId,
+        storyPoints,
+        originalEstimate,
         timeRemaining,
         sprintId,
+        sprint_id, // Also check for snake_case
         blockedReason
       } = req.body;
 
+      console.log('🔍 EXTRACTED VALUES:', {
+        sprintId,
+        sprint_id,
+        sprintIdType: typeof sprintId,
+        sprint_idType: typeof sprint_id
+      });
+
       const issue = await Issue.findById(id);
+
+      console.log('🔍 ISSUE BEFORE UPDATE:', {
+        id: issue.id,
+        title: issue.title,
+        current_sprint_id: issue.sprint_id
+      });
 
       // Check if user has access to this issue
       const boardId = issue.board.id;
@@ -152,10 +188,31 @@ class IssueController {
       if (storyPoints !== undefined) issue.story_points = storyPoints;
       if (originalEstimate !== undefined) issue.original_estimate = originalEstimate;
       if (timeRemaining !== undefined) issue.time_remaining = timeRemaining;
-      if (sprintId !== undefined) issue.sprint_id = sprintId;
+
+      // Handle both camelCase and snake_case for sprint_id
+      if (sprintId !== undefined) {
+        console.log('🔄 Setting sprint_id from sprintId:', sprintId);
+        issue.sprint_id = sprintId;
+      } else if (sprint_id !== undefined) {
+        console.log('🔄 Setting sprint_id from sprint_id:', sprint_id);
+        issue.sprint_id = sprint_id;
+      }
+
       if (blockedReason !== undefined) issue.blocked_reason = blockedReason;
 
+      console.log('🔍 ISSUE AFTER PROPERTY UPDATE:', {
+        id: issue.id,
+        title: issue.title,
+        new_sprint_id: issue.sprint_id
+      });
+
       await issue.save();
+
+      console.log('🔍 ISSUE AFTER SAVE:', {
+        id: issue.id,
+        title: issue.title,
+        final_sprint_id: issue.sprint_id
+      });
 
       res.status(200).json(formatSuccessResponse({
         message: 'Issue updated successfully',
