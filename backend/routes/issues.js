@@ -34,7 +34,7 @@ const validateUpdateIssue = [
     .isIn(['P1', 'P2', 'P3', 'P4'])
     .withMessage('Invalid priority'),
   body('assigneeId')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('Assignee ID must be a positive integer'),
   body('storyPoints')

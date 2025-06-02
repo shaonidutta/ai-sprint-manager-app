@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, Button } from '../../components/common';
-import { CreateBoardModal } from '../../components/boards';
 import { api } from '../../api';
 
 const ProjectDetailPage = () => {
@@ -13,7 +12,8 @@ const ProjectDetailPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [boards, setBoards] = useState([]);
   const [boardLoading, setBoardLoading] = useState(false);
-  const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamLoading, setTeamLoading] = useState(false);
 
   // Fetch project details
   const fetchProject = async () => {
@@ -56,6 +56,19 @@ const ProjectDetailPage = () => {
     }
   };
 
+  // Fetch team members for the project
+  const fetchTeamMembers = async () => {
+    try {
+      setTeamLoading(true);
+      const response = await api.projects.getTeamMembers(id);
+      setTeamMembers(response.data.data.team_members || []);
+    } catch (err) {
+      console.error('Failed to fetch team members:', err);
+    } finally {
+      setTeamLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchProject();
@@ -63,11 +76,14 @@ const ProjectDetailPage = () => {
     }
   }, [id]);
 
-  const handleBoardCreated = (newBoard) => {
-    console.log('[ProjectDetailPage] Board created:', newBoard);
-    setBoards(prev => [newBoard, ...prev]);
-    setShowCreateBoardModal(false);
-  };
+  // Fetch team members when team tab is active
+  useEffect(() => {
+    if (activeTab === 'team' && id) {
+      fetchTeamMembers();
+    }
+  }, [activeTab, id]);
+
+
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -83,6 +99,23 @@ const ProjectDetailPage = () => {
       .map(word => word.charAt(0).toUpperCase())
       .slice(0, 2)
       .join('');
+  };
+
+  const getInitials = (firstName, lastName) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  };
+
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'Admin':
+        return 'bg-red-100 text-red-800';
+      case 'Project Manager':
+        return 'bg-blue-100 text-blue-800';
+      case 'Developer':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-neutral-100 text-neutral-800';
+    }
   };
 
   if (loading) {
@@ -190,7 +223,6 @@ const ProjectDetailPage = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'boards', label: 'Boards' },
     { id: 'team', label: 'Team' },
     { id: 'ai', label: 'AI Features' }
   ];
@@ -272,13 +304,13 @@ const ProjectDetailPage = () => {
               </Button>
               {boards.length > 0 && (
                 <Button
-                  onClick={() => setActiveTab('boards')}
+                  onClick={() => navigate(`/board?project=${id}`)}
                   className="transition-all duration-150 hover:shadow-md"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
                   </svg>
-                  View Boards ({boards.length})
+                  View Boards
                 </Button>
               )}
             </div>
@@ -376,26 +408,18 @@ const ProjectDetailPage = () => {
                   <Button
                     fullWidth
                     variant="outline"
-                    onClick={() => setActiveTab('boards')}
+                    onClick={() => navigate(`/board?project=${id}`)}
                     className="h-12 transition-all duration-150 hover:shadow-md hover:scale-105"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
                     </svg>
-                    View Boards ({boards.length})
+                    View Boards
                   </Button>
                 ) : (
-                  <Button
-                    fullWidth
-                    variant="outline"
-                    onClick={() => setShowCreateBoardModal(true)}
-                    className="h-12 transition-all duration-150 hover:shadow-md hover:scale-105"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Create First Board
-                  </Button>
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">No boards available</p>
+                  </div>
                 )}
                 <Button
                   fullWidth
@@ -423,167 +447,79 @@ const ProjectDetailPage = () => {
           </div>
         )}
 
-        {activeTab === 'boards' && (
-          <div className="space-y-8">
-            {/* Boards Header */}
-            <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+
+
+        {activeTab === 'team' && (
+          <Card className="border-0 shadow-sm">
+            <div className="p-6 border-b border-neutral-200">
+              <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-2xl font-bold text-neutral-900">Project Boards</h2>
-                  <p className="text-neutral-600 mt-1">Manage and organize your project work with boards</p>
+                  <h3 className="text-xl font-semibold text-neutral-900">Team Members ({teamMembers.length})</h3>
+                  <p className="text-neutral-600 mt-1">Manage your project team members and their roles</p>
                 </div>
                 <Button
-                  onClick={() => setShowCreateBoardModal(true)}
-                  className="transition-all duration-150 hover:shadow-md min-h-[44px]"
+                  onClick={() => navigate(`/projects/${id}/team`)}
+                  className="transition-all duration-150 hover:shadow-md"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
-                  Create Board
+                  Manage Team
                 </Button>
               </div>
             </div>
 
-            {boardLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(3)].map((_, index) => (
-                  <Card key={index} className="p-6 animate-pulse border-0 shadow-sm">
-                    <div className="h-6 bg-neutral-200 rounded w-3/4 mb-4"></div>
-                    <div className="h-4 bg-neutral-200 rounded w-1/2 mb-4"></div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="h-12 bg-neutral-200 rounded"></div>
-                      <div className="h-12 bg-neutral-200 rounded"></div>
-                      <div className="h-12 bg-neutral-200 rounded"></div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : boards.length > 0 ? (
-              <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
-                {boards.filter(board => board && board.id && board.name).map((board) => (
-                  <div
-                    key={board.id}
-                    className="
-                      group p-6 border-b border-neutral-200 last:border-b-0
-                      hover:bg-neutral-50 transition-all duration-150 ease-in-out
-                      cursor-pointer min-h-[44px]
-                    "
-                    onClick={() => {
-                      console.log('[ProjectDetailPage] Navigating to board:', board.id, 'for project:', id);
-                      navigate(`/board?project=${id}`);
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        navigate(`/board?project=${id}`);
-                      }
-                    }}
-                    aria-label={`Open ${board.name} board`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      {/* Board Information */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="
-                            text-lg font-semibold text-neutral-900
-                            truncate
-                            group-hover:text-primary-600 transition-colors duration-150
-                          ">
-                            {board.name}
-                          </h3>
-                          {board.is_default && (
-                            <span className="text-xs bg-primary-100 text-primary-800 px-3 py-1 rounded-full font-medium flex-shrink-0">
-                              Default
-                            </span>
-                          )}
+            <div className="p-6">
+              {teamLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, index) => (
+                    <div key={index} className="animate-pulse">
+                      <div className="flex items-center space-x-4 p-4 border border-neutral-200 rounded-lg">
+                        <div className="w-12 h-12 bg-neutral-200 rounded-full"></div>
+                        <div className="flex-1">
+                          <div className="h-4 bg-neutral-200 rounded w-1/3 mb-2"></div>
+                          <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
                         </div>
-                        {board.description && (
-                          <p className="text-neutral-600 text-sm line-clamp-2 leading-relaxed">
-                            {board.description}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Action Button */}
-                      <div className="flex-shrink-0 self-start sm:self-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/board?project=${id}`);
-                          }}
-                          className="
-                            inline-flex items-center gap-2 px-4 py-2
-                            text-sm font-medium text-neutral-700
-                            border border-neutral-300 rounded-lg bg-white
-                            hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700
-                            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
-                            transition-all duration-150 ease-in-out
-                            group-hover:border-primary-300 group-hover:text-primary-700
-                            w-full sm:w-auto justify-center sm:justify-start
-                            min-h-[44px]
-                          "
-                          aria-label={`Open ${board.name} board`}
-                        >
-                          Open Board
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
+                        <div className="w-20 h-6 bg-neutral-200 rounded-full"></div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <Card className="p-12 text-center border-0 shadow-sm">
-                <div className="max-w-md mx-auto">
-                  <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
+                  ))}
+                </div>
+              ) : teamMembers.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-semibold text-neutral-900 mb-3">No Boards Found</h3>
-                  <p className="text-neutral-600 mb-8 text-lg leading-relaxed">
-                    This project doesn't have any boards yet. Create your first board to start managing issues and organizing your work.
-                  </p>
-                  <Button
-                    onClick={() => setShowCreateBoardModal(true)}
-                    className="transition-all duration-150 hover:shadow-md min-h-[44px] px-8"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Create First Board
+                  <h4 className="text-lg font-medium text-neutral-900 mb-2">No team members</h4>
+                  <p className="text-neutral-600 mb-6">Get started by inviting your first team member.</p>
+                  <Button onClick={() => navigate(`/projects/${id}/team`)}>
+                    Invite Team Member
                   </Button>
                 </div>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'team' && (
-          <Card className="p-12 text-center border-0 shadow-sm">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-semibold text-neutral-900 mb-3">Team Management</h3>
-              <p className="text-neutral-600 mb-8 text-lg leading-relaxed">
-                Manage your project team members, assign roles, and control permissions for collaborative work.
-              </p>
-              <Button
-                onClick={() => navigate(`/projects/${id}/team`)}
-                className="transition-all duration-150 hover:shadow-md min-h-[44px] px-8"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-                Manage Team
-              </Button>
+              ) : (
+                <div className="space-y-4">
+                  {teamMembers.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-150">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-primary-500 text-white rounded-full flex items-center justify-center font-medium text-lg">
+                          {getInitials(member.first_name, member.last_name)}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-neutral-900">
+                            {member.first_name} {member.last_name}
+                          </h4>
+                          <p className="text-sm text-neutral-500">{member.email}</p>
+                        </div>
+                      </div>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${getRoleColor(member.role)}`}>
+                        {member.role}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
         )}
@@ -735,43 +671,11 @@ const ProjectDetailPage = () => {
               </div>
             </div>
 
-            {/* AI Dashboard Link */}
-            <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-lg transition-all duration-300">
-              <div className="p-8">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-6 lg:space-y-0">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-semibold text-neutral-900">AI Features Dashboard</h3>
-                      <p className="text-neutral-600 mt-1 text-lg">View all AI insights and analytics in one comprehensive dashboard</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate(`/ai/dashboard/${id}`)}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-4 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium min-h-[44px] hover:shadow-md"
-                  >
-                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    Open Dashboard
-                  </button>
-                </div>
-              </div>
-            </div>
+
           </div>
         )}
 
-        {/* Create Board Modal */}
-        <CreateBoardModal
-          isOpen={showCreateBoardModal}
-          onClose={() => setShowCreateBoardModal(false)}
-          projectId={id}
-          onBoardCreated={handleBoardCreated}
-        />
+
     </div>
   );
 };

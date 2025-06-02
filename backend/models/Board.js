@@ -315,8 +315,10 @@ class Board {
 
   async getIssues(options = {}) {
     try {
-      const { status, assigneeId, sprintId, page = 1, limit = 50 } = options;
+      const { status, assigneeId, sprintId, page = 1, limit = 50, backlogOnly = false } = options;
       const offset = (page - 1) * limit;
+
+      console.log('🔍 BOARD.getIssues called with options:', options);
 
       let whereClause = 'WHERE i.board_id = ?';
       let queryParams = [this.id];
@@ -336,6 +338,12 @@ class Board {
         queryParams.push(sprintId);
       }
 
+      // Add backlog filter - issues not assigned to any sprint
+      if (backlogOnly) {
+        whereClause += ' AND i.sprint_id IS NULL';
+        console.log('🔍 BACKLOG FILTER APPLIED: Adding sprint_id IS NULL filter');
+      }
+
       // Use string interpolation for LIMIT/OFFSET to avoid MySQL parameter issues
       const query = `
         SELECT i.*,
@@ -350,32 +358,53 @@ class Board {
         ORDER BY i.created_at DESC
         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
+
+      console.log('🔍 BOARD QUERY DEBUG:', {
+        backlogOnly,
+        whereClause,
+        queryParams,
+        finalQuery: query.replace(/\s+/g, ' ').trim()
+      });
+
       const rows = await database.query(query, queryParams);
+
+      console.log('🔍 BOARD QUERY RESULTS:', {
+        rowCount: rows.length,
+        sampleRow: rows[0] ? {
+          id: rows[0].id,
+          title: rows[0].title,
+          sprint_id: rows[0].sprint_id,
+          sprint_name: rows[0].sprint_name
+        } : null
+      });
 
       return rows.map(row => ({
         id: row.id,
         title: row.title,
         description: row.description,
-        issueType: row.issue_type,
+        issue_type: row.issue_type,
+        issue_key: `${row.project_key}-${row.id}`,
         status: row.status,
         priority: row.priority,
-        storyPoints: row.story_points,
+        story_points: row.story_points,
+        sprint_id: row.sprint_id,
+        blocked_reason: row.blocked_reason,
         assignee: row.assignee_id ? {
           id: row.assignee_id,
-          firstName: row.assignee_first_name,
-          lastName: row.assignee_last_name
+          first_name: row.assignee_first_name,
+          last_name: row.assignee_last_name
         } : null,
         reporter: {
           id: row.reporter_id,
-          firstName: row.reporter_first_name,
-          lastName: row.reporter_last_name
+          first_name: row.reporter_first_name,
+          last_name: row.reporter_last_name
         },
         sprint: row.sprint_id ? {
           id: row.sprint_id,
           name: row.sprint_name
         } : null,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
+        created_at: row.created_at,
+        updated_at: row.updated_at
       }));
     } catch (error) {
       logger.error('Error getting board issues:', error);

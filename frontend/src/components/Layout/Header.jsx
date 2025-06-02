@@ -6,7 +6,6 @@ import {
   CreateIcon, MenuIcon
 } from '../common/Icons/index.jsx';
 import CreateProjectModal from '../dashboard/CreateProjectModal';
-import { CreateBoardModal } from '../boards';
 import { CreateIssueModal } from '../issues';
 import { api } from '../../api';
 
@@ -16,7 +15,6 @@ const Header = ({ onMenuClick, isMobile }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
-  const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
   const [showCreateIssueModal, setShowCreateIssueModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
 
@@ -79,12 +77,6 @@ const Header = ({ onMenuClick, isMobile }) => {
     }
   };
 
-  const handleCreateBoard = (boardData) => {
-    // Board creation will be handled by the modal
-    setShowCreateBoardModal(false);
-    // Optionally navigate to the new board or refresh the current page
-  };
-
   const handleCreateIssue = (issueData) => {
     // Issue creation will be handled by the modal
     setShowCreateIssueModal(false);
@@ -103,13 +95,6 @@ const Header = ({ onMenuClick, isMobile }) => {
       action: () => {
         setIsCreateMenuOpen(false);
         setShowCreateProjectModal(true);
-      }
-    },
-    {
-      label: 'Create board',
-      action: () => {
-        setIsCreateMenuOpen(false);
-        setShowCreateBoardModal(true);
       }
     },
     {
@@ -238,14 +223,6 @@ const Header = ({ onMenuClick, isMobile }) => {
         onClose={() => setShowCreateProjectModal(false)}
         onSubmit={handleCreateProject}
         loading={createLoading}
-      />
-
-      {/* Create Board Modal */}
-      <CreateBoardModal
-        isOpen={showCreateBoardModal}
-        onClose={() => setShowCreateBoardModal(false)}
-        projectId={null} // Will need to be passed from context or current project
-        onBoardCreated={handleCreateBoard}
       />
 
       {/* Create Issue Modal */}

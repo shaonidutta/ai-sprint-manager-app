@@ -160,6 +160,38 @@ const getProjectById = async (req, res, next) => {
   }
 };
 
+// Get project statistics
+const getProjectStats = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Find project
+    const project = await Project.findById(id);
+    if (!project) {
+      return next(new AppError('Project not found', 404));
+    }
+
+    // Check if user has access to this project
+    const hasAccess = await project.hasUserAccess(userId);
+    if (!hasAccess) {
+      return next(new AppError('Access denied to this project', 403));
+    }
+
+    // Get project statistics
+    const stats = await project.getStats();
+
+    res.json({
+      success: true,
+      data: stats
+    });
+
+  } catch (error) {
+    logger.error('Get project stats error:', error);
+    next(new AppError('Failed to retrieve project statistics. Please try again.', 500));
+  }
+};
+
 // Update project
 const updateProject = async (req, res, next) => {
   try {
@@ -249,6 +281,7 @@ module.exports = {
   createProject,
   getProjects,
   getProjectById,
+  getProjectStats,
   updateProject,
   deleteProject
 };

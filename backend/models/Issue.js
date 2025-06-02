@@ -253,7 +253,7 @@ class Issue {
 
   static async findByBoardId(boardId, userId, options = {}) {
     try {
-      const { page = 1, limit = 50, status, assigneeId, sprintId, search = '', issueType, priority } = options;
+      const { page = 1, limit = 50, status, assigneeId, sprintId, search = '', issueType, priority, backlogOnly = false } = options;
       const offset = (page - 1) * limit;
 
       // Check if user has access to board
@@ -287,6 +287,12 @@ class Issue {
         queryParams.push(sprintId);
       }
 
+      // Add backlog filter - issues not assigned to any sprint
+      if (backlogOnly) {
+        whereClause += ' AND i.sprint_id IS NULL';
+        console.log('🔍 BACKLOG FILTER APPLIED: Adding sprint_id IS NULL filter');
+      }
+
       if (issueType) {
         whereClause += ' AND i.issue_type = ?';
         queryParams.push(issueType);
@@ -306,29 +312,50 @@ class Issue {
         SELECT i.*,
                assignee.first_name as assignee_first_name, assignee.last_name as assignee_last_name,
                reporter.first_name as reporter_first_name, reporter.last_name as reporter_last_name,
-               s.name as sprint_name
+               s.name as sprint_name,
+               p.project_key
         FROM issues i
         LEFT JOIN users assignee ON i.assignee_id = assignee.id
         INNER JOIN users reporter ON i.reporter_id = reporter.id
         LEFT JOIN sprints s ON i.sprint_id = s.id
+        INNER JOIN boards b ON i.board_id = b.id
+        INNER JOIN projects p ON b.project_id = p.id
         ${whereClause}
         ORDER BY i.created_at DESC
         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `;
 
+      console.log('🔍 ISSUE QUERY DEBUG:', {
+        backlogOnly,
+        whereClause,
+        queryParams,
+        finalQuery: query.replace(/\s+/g, ' ').trim()
+      });
+
       const rows = await database.query(query, queryParams);
+
+      console.log('🔍 QUERY RESULTS:', {
+        rowCount: rows.length,
+        sampleRow: rows[0] ? {
+          id: rows[0].id,
+          title: rows[0].title,
+          sprint_id: rows[0].sprint_id,
+          sprint_name: rows[0].sprint_name
+        } : null
+      });
 
       const issues = rows.map(row => {
         const issue = new Issue(row);
+        issue.issue_key = `${row.project_key}-${row.id}`;
         issue.assignee = row.assignee_id ? {
           id: row.assignee_id,
-          firstName: row.assignee_first_name,
-          lastName: row.assignee_last_name
+          first_name: row.assignee_first_name,
+          last_name: row.assignee_last_name
         } : null;
         issue.reporter = {
           id: row.reporter_id,
-          firstName: row.reporter_first_name,
-          lastName: row.reporter_last_name
+          first_name: row.reporter_first_name,
+          last_name: row.reporter_last_name
         };
         issue.sprint = row.sprint_id ? {
           id: row.sprint_id,
@@ -371,7 +398,7 @@ class Issue {
           UPDATE issues SET
             title = ?, description = ?, issue_type = ?, status = ?, priority = ?,
             story_points = ?, original_estimate = ?, time_spent = ?, time_remaining = ?,
-            assignee_id = ?, blocked_reason = ?, updated_at = NOW()
+            assignee_id = ?, sprint_id = ?, blocked_reason = ?, updated_at = NOW()
           WHERE id = ?
         `;
 
@@ -386,11 +413,27 @@ class Issue {
           this.time_spent,
           this.time_remaining,
           this.assignee_id,
+          this.sprint_id,
           this.blocked_reason ? this.blocked_reason.trim() : null,
           this.id
         ];
 
-        await database.query(query, values);
+        console.log('🔍 ISSUE SAVE DEBUG:', {
+          issueId: this.id,
+          title: this.title,
+          sprint_id: this.sprint_id,
+          sprint_id_type: typeof this.sprint_id,
+          query: query.replace(/\s+/g, ' ').trim(),
+          values: values
+        });
+
+        const result = await database.query(query, values);
+        console.log('🔍 DATABASE UPDATE RESULT:', result);
+
+        // Verify the update by fetching the record
+        const verifyQuery = 'SELECT id, title, sprint_id FROM issues WHERE id = ?';
+        const verifyResult = await database.query(verifyQuery, [this.id]);
+        console.log('🔍 VERIFICATION QUERY RESULT:', verifyResult[0]);
         return this;
       } else {
         throw new Error('Cannot save issue without ID. Use Issue.create() for new issues.');

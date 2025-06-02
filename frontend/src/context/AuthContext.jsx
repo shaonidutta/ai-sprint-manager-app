@@ -22,13 +22,6 @@ export const AuthProvider = ({ children }) => {
     console.log('[AuthContext] Initial load:', { hasToken: !!token });
     if (token) {
       fetchUser();
-      
-      // Set up periodic session check
-      const checkInterval = setInterval(() => {
-        checkSession();
-      }, 5 * 60 * 1000); // Check every 5 minutes
-      
-      return () => clearInterval(checkInterval);
     } else {
       setLoading(false);
     }
@@ -233,33 +226,6 @@ export const AuthProvider = ({ children }) => {
       return response.data.data;
     } catch (error) {
       throw error;
-    }
-  };
-
-  const checkSession = async () => {
-    try {
-      await axiosInstance.get('/auth/check-session');
-    } catch (error) {
-      if (error.response?.status === 401) {
-        // Session expired, attempt token refresh
-        try {
-          const refreshToken = localStorage.getItem('refreshToken');
-          if (!refreshToken) {
-            throw new Error('No refresh token');
-          }
-          
-          const response = await axiosInstance.post('/auth/refresh', {
-            refresh_token: refreshToken
-          });
-          
-          const { access_token } = response.data.data;
-          localStorage.setItem('token', access_token);
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-        } catch (refreshError) {
-          // If refresh fails, logout
-          await logout();
-        }
-      }
     }
   };
 

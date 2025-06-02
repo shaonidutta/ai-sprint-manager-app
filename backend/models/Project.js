@@ -343,13 +343,83 @@ class Project {
   async hasUserAccess(userId) {
     try {
       const query = `
-        SELECT id FROM user_projects 
+        SELECT id FROM user_projects
         WHERE user_id = ? AND project_id = ? AND deleted_at IS NULL
       `;
       const rows = await database.query(query, [userId, this.id]);
       return rows.length > 0;
     } catch (error) {
       logger.error('Error checking user access:', error);
+      throw error;
+    }
+  }
+
+  // Get project statistics
+  async getStats() {
+    try {
+      // Get all boards for this project
+      const boardsQuery = `
+        SELECT id FROM boards
+        WHERE project_id = ?
+      `;
+      const boards = await database.query(boardsQuery, [this.id]);
+      const boardIds = boards.map(board => board.id);
+
+      if (boardIds.length === 0) {
+        // No boards means no issues or sprints
+        const teamMembersQuery = `
+          SELECT COUNT(*) as count FROM user_projects
+          WHERE project_id = ? AND deleted_at IS NULL
+        `;
+        const teamResult = await database.query(teamMembersQuery, [this.id]);
+
+        return {
+          total_issues: 0,
+          active_sprints: 0,
+          completed_issues: 0,
+          team_members_count: teamResult[0].count || 0
+        };
+      }
+
+      // Create placeholders for board IDs
+      const boardPlaceholders = boardIds.map(() => '?').join(',');
+
+      // Get total issues count
+      const totalIssuesQuery = `
+        SELECT COUNT(*) as count FROM issues
+        WHERE board_id IN (${boardPlaceholders})
+      `;
+      const totalIssuesResult = await database.query(totalIssuesQuery, boardIds);
+
+      // Get completed issues count
+      const completedIssuesQuery = `
+        SELECT COUNT(*) as count FROM issues
+        WHERE board_id IN (${boardPlaceholders}) AND status = 'Done'
+      `;
+      const completedIssuesResult = await database.query(completedIssuesQuery, boardIds);
+
+      // Get active sprints count
+      const activeSprintsQuery = `
+        SELECT COUNT(*) as count FROM sprints
+        WHERE board_id IN (${boardPlaceholders}) AND status = 'Active'
+      `;
+      const activeSprintsResult = await database.query(activeSprintsQuery, boardIds);
+
+      // Get team members count
+      const teamMembersQuery = `
+        SELECT COUNT(*) as count FROM user_projects
+        WHERE project_id = ? AND deleted_at IS NULL
+      `;
+      const teamMembersResult = await database.query(teamMembersQuery, [this.id]);
+
+      return {
+        total_issues: totalIssuesResult[0].count || 0,
+        active_sprints: activeSprintsResult[0].count || 0,
+        completed_issues: completedIssuesResult[0].count || 0,
+        team_members_count: teamMembersResult[0].count || 0
+      };
+    } catch (error) {
+      logger.error('Error getting project stats:', error);
       throw error;
     }
   }

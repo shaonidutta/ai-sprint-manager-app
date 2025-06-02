@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, TextArea, Select, Badge } from '../common';
+import UserDropdown from '../common/UserDropdown';
 import { api } from '../../api';
 
 const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDeleted }) => {
@@ -11,6 +12,8 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
   const [newComment, setNewComment] = useState('');
   const [timeLog, setTimeLog] = useState({ hours: '', description: '' });
   const [timeLogs, setTimeLogs] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [loadingTeamMembers, setLoadingTeamMembers] = useState(false);
 
   const [editForm, setEditForm] = useState({
     title: '',
@@ -19,19 +22,37 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
     priority: '',
     issue_type: '',
     story_points: '',
-    assignee_id: ''
+    assignee_id: '',
+    blocked_reason: ''
   });
 
   // Fetch issue details
   const fetchIssue = async () => {
     if (!issueId) return;
-    
+
     try {
       setLoading(true);
+      console.log('🔍 Fetching issue details for ID:', issueId);
       const response = await api.issues.getById(issueId);
-      const issueData = response.data.data.issue;
+
+      // Handle nested API response structure: {success: true, data: {message: "", data: {issue: {...}}}}
+      let issueData;
+      if (response.data?.data?.data?.issue) {
+        // Nested structure
+        issueData = response.data.data.data.issue;
+      } else if (response.data?.data?.issue) {
+        // Direct structure
+        issueData = response.data.data.issue;
+      } else if (response.data?.issue) {
+        // Simple structure
+        issueData = response.data.issue;
+      } else {
+        throw new Error('Invalid API response structure');
+      }
+
+      console.log('✅ Issue data received:', issueData);
       setIssue(issueData);
-      
+
       // Initialize edit form
       setEditForm({
         title: issueData.title || '',
@@ -40,15 +61,43 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
         priority: issueData.priority || '',
         issue_type: issueData.issue_type || '',
         story_points: issueData.story_points || '',
-        assignee_id: issueData.assignee_id || ''
+        assignee_id: issueData.assignee_id || '',
+        blocked_reason: issueData.blocked_reason || ''
       });
       
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch issue:', err);
+      console.error('❌ Failed to fetch issue:', err);
+      console.error('❌ Error details:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
       setError('Failed to load issue details. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch team members for assignee dropdown
+  const fetchTeamMembers = async () => {
+    if (!issue?.board?.projectId) return;
+
+    try {
+      setLoadingTeamMembers(true);
+      const response = await api.projects.getTeamMembers(issue.board.projectId);
+      const teamMembersData = response?.data?.data?.team_members;
+
+      if (Array.isArray(teamMembersData)) {
+        setTeamMembers(teamMembersData);
+      } else {
+        setTeamMembers([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch team members:', err);
+      setTeamMembers([]);
+    } finally {
+      setLoadingTeamMembers(false);
     }
   };
 
@@ -67,12 +116,25 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
   // Fetch time logs
   const fetchTimeLogs = async () => {
     if (!issueId) return;
-    
+
     try {
       const response = await api.issues.timeLogs.getAll(issueId);
-      setTimeLogs(response.data.data.timeLogs || []);
+      // Handle nested API response structure
+      let timeLogsData;
+      if (response.data?.data?.data?.timeLogs) {
+        timeLogsData = response.data.data.data.timeLogs;
+      } else if (response.data?.data?.timeLogs) {
+        timeLogsData = response.data.data.timeLogs;
+      } else if (response.data?.timeLogs) {
+        timeLogsData = response.data.timeLogs;
+      } else {
+        timeLogsData = [];
+      }
+      setTimeLogs(timeLogsData);
     } catch (err) {
       console.error('Failed to fetch time logs:', err);
+      // Don't fail the whole component if time logs fail
+      setTimeLogs([]);
     }
   };
 
@@ -83,6 +145,13 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
       fetchTimeLogs();
     }
   }, [isOpen, issueId]);
+
+  // Fetch team members when issue is loaded
+  useEffect(() => {
+    if (issue?.board?.projectId) {
+      fetchTeamMembers();
+    }
+  }, [issue?.board?.projectId]);
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -131,10 +200,10 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
 
   const handleLogTime = async () => {
     if (!timeLog.hours || !timeLog.description.trim()) return;
-    
+
     try {
       const response = await api.issues.timeLogs.create(issueId, {
-        hours: parseFloat(timeLog.hours),
+        hoursLogged: parseFloat(timeLog.hours), // Use hoursLogged to match backend
         description: timeLog.description.trim()
       });
       
@@ -177,7 +246,7 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
   };
 
   const getTotalTimeLogged = () => {
-    return timeLogs.reduce((total, log) => total + (log.hours || 0), 0);
+    return timeLogs.reduce((total, log) => total + (log.hours_logged || log.hours || 0), 0);
   };
 
   if (!isOpen) return null;
@@ -238,7 +307,7 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
                 {/* Issue Details */}
                 <div>
                   {isEditing ? (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <Input
                         name="title"
                         value={editForm.title}
@@ -253,9 +322,73 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
                         placeholder="Issue description"
                         rows={4}
                       />
+
+                      {/* Assignee Dropdown */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Assignee
+                        </label>
+                        <UserDropdown
+                          value={editForm.assignee_id ? parseInt(editForm.assignee_id) : null}
+                          onChange={(userId) => setEditForm(prev => ({ ...prev, assignee_id: userId ? userId.toString() : '' }))}
+                          users={teamMembers}
+                          placeholder="Select assignee..."
+                          includeUnassigned={true}
+                          disabled={loadingTeamMembers}
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Blocker Field */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Blocker
+                          </label>
+                          {editForm.blocked_reason && editForm.blocked_reason.trim() && (
+                            <button
+                              type="button"
+                              onClick={() => setEditForm(prev => ({ ...prev, blocked_reason: '' }))}
+                              className="text-xs text-red-600 hover:text-red-800 font-medium transition-colors duration-150"
+                            >
+                              Clear Blocker
+                            </button>
+                          )}
+                        </div>
+                        <TextArea
+                          name="blocked_reason"
+                          value={editForm.blocked_reason}
+                          onChange={handleEditChange}
+                          placeholder="Describe what is blocking this issue (leave empty to unblock)..."
+                          rows={3}
+                          className={`w-full ${editForm.blocked_reason && editForm.blocked_reason.trim() ? 'border-red-300 bg-red-50' : ''}`}
+                        />
+                        <div className="flex items-start space-x-2">
+                          {editForm.blocked_reason && editForm.blocked_reason.trim() ? (
+                            <div className="flex items-center space-x-1 text-red-600">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <p className="text-xs font-medium">
+                                This issue will be marked as blocked and cannot be moved between columns.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-1 text-green-600">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              <p className="text-xs font-medium">
+                                This issue is not blocked and can be moved freely between columns.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="flex space-x-3">
                         <Button onClick={handleSaveEdit} disabled={loading}>
-                          {loading ? 'Saving...' : 'Save'}
+                          {loading ? 'Saving...' : 'Save Changes'}
                         </Button>
                         <Button variant="outline" onClick={() => setIsEditing(false)}>
                           Cancel
@@ -338,6 +471,32 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
                       <span className="text-neutral-600">Assignee:</span>
                       <span>{issue.assignee_name || 'Unassigned'}</span>
                     </div>
+                    {issue.blocked_reason && (
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-neutral-600">Blocker:</span>
+                          <button
+                            onClick={() => setIsEditing(true)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors duration-150"
+                            title="Click to edit and unblock this issue"
+                          >
+                            Edit to Unblock
+                          </button>
+                        </div>
+                        <div className="bg-red-50 border border-red-200 rounded p-2">
+                          <div className="flex items-center space-x-1 mb-1">
+                            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            <Badge variant="danger" size="sm">Blocked</Badge>
+                          </div>
+                          <p className="text-xs text-red-700">{issue.blocked_reason}</p>
+                          <p className="text-xs text-red-600 mt-1 italic">
+                            This issue cannot be moved between columns while blocked.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-neutral-600">Created:</span>
                       <span>{formatDate(issue.created_at)}</span>
@@ -389,7 +548,7 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
                           {timeLogs.slice(-3).map((log) => (
                             <div key={log.id} className="text-xs">
                               <div className="flex justify-between">
-                                <span className="font-medium">{log.hours}h</span>
+                                <span className="font-medium">{log.hours_logged || log.hours}h</span>
                                 <span className="text-neutral-500">
                                   {formatDate(log.created_at)}
                                 </span>

@@ -23,7 +23,13 @@ export const useDashboard = () => {
   const fetchStats = async () => {
     try {
       const response = await api.dashboard.getStats();
-      setStats(response.data.data);
+      const statsData = response.data?.data || response.data || {};
+      setStats({
+        totalProjects: statsData.totalProjects || 0,
+        activeSprints: statsData.activeSprints || 0,
+        completedTasks: statsData.completedTasks || 0,
+        pendingTasks: statsData.pendingTasks || 0
+      });
     } catch (err) {
       console.error('Failed to fetch dashboard stats:', err);
       // Use fallback data if API fails
@@ -33,22 +39,67 @@ export const useDashboard = () => {
         completedTasks: 0,
         pendingTasks: 0
       });
+      // Don't throw error for stats - use fallback data instead
     }
   };
 
-  // Fetch user projects
+  // Fetch user projects with statistics
   const fetchProjects = async () => {
     try {
-      const response = await api.projects.getAll({ 
+      const response = await api.projects.getAll({
         limit: 6, // Show only recent 6 projects on dashboard
         sort_by: 'updated_at',
         sort_order: 'desc'
       });
       const projectsData = response.data?.data?.projects || response.data?.projects || response.data || [];
-      setProjects(Array.isArray(projectsData) ? projectsData : []);
+
+      if (Array.isArray(projectsData) && projectsData.length > 0) {
+        // Fetch statistics for each project
+        const projectsWithStats = await Promise.allSettled(
+          projectsData.map(async (project) => {
+            try {
+              // Fetch project statistics
+              const statsResponse = await api.projects.getStats(project.id);
+              const stats = statsResponse.data?.data || {};
+
+              // Fetch team members count
+              const teamResponse = await api.projects.getTeamMembers(project.id);
+              const teamMembers = teamResponse.data?.data?.team_members || [];
+
+              return {
+                ...project,
+                total_issues: stats.total_issues || 0,
+                active_sprints: stats.active_sprints || 0,
+                team_size: teamMembers.length || 0,
+                team_members: teamMembers.slice(0, 3) // Only first 3 for display
+              };
+            } catch (error) {
+              console.warn(`Failed to fetch stats for project ${project.id}:`, error);
+              // Return project with default values if stats fail
+              return {
+                ...project,
+                total_issues: 0,
+                active_sprints: 0,
+                team_size: 0,
+                team_members: []
+              };
+            }
+          })
+        );
+
+        // Extract successful results
+        const enrichedProjects = projectsWithStats
+          .filter(result => result.status === 'fulfilled')
+          .map(result => result.value);
+
+        setProjects(enrichedProjects);
+      } else {
+        setProjects([]);
+      }
     } catch (err) {
       console.error('Failed to fetch projects:', err);
       setProjects([]);
+      // Don't throw error for projects - show empty state instead
     }
   };
 
@@ -56,10 +107,12 @@ export const useDashboard = () => {
   const fetchActivity = async () => {
     try {
       const response = await api.dashboard.getActivity({ limit: 10 });
-      setRecentActivity(response.data.data || []);
+      const activityData = response.data?.data || response.data || [];
+      setRecentActivity(Array.isArray(activityData) ? activityData : []);
     } catch (err) {
       console.error('Failed to fetch recent activity:', err);
       setRecentActivity([]);
+      // Don't throw error for activity - show empty state instead
     }
   };
 
@@ -67,15 +120,18 @@ export const useDashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      await Promise.all([
+      // Fetch all data concurrently, but don't fail if individual requests fail
+      // since each fetch function handles its own errors gracefully
+      await Promise.allSettled([
         fetchStats(),
         fetchProjects(),
         fetchActivity()
       ]);
     } catch (err) {
-      setError('Failed to load dashboard data');
+      // This should rarely happen since individual functions handle errors
+      setError('Failed to load dashboard data. Please try again.');
       console.error('Dashboard data loading error:', err);
     } finally {
       setLoading(false);

@@ -30,6 +30,7 @@ export const api = {
     create: (data) => axiosInstance.post(API_ENDPOINTS.PROJECTS.CREATE, data),
     update: (id, data) => axiosInstance.put(API_ENDPOINTS.PROJECTS.UPDATE(id), data),
     delete: (id) => axiosInstance.delete(API_ENDPOINTS.PROJECTS.DELETE(id)),
+    getStats: (id) => axiosInstance.get(API_ENDPOINTS.PROJECTS.STATS(id)),
 
     // Team member management methods
     getTeamMembers: (projectId) => axiosInstance.get(API_ENDPOINTS.PROJECTS.MEMBERS.LIST(projectId)),
@@ -49,7 +50,6 @@ export const api = {
   boards: {
     getAll: (projectId) => axiosInstance.get(API_ENDPOINTS.BOARDS.LIST(projectId)),
     getById: (id) => axiosInstance.get(API_ENDPOINTS.BOARDS.DETAIL(id)),
-    create: (projectId, data) => axiosInstance.post(API_ENDPOINTS.BOARDS.CREATE(projectId), data),
     update: (id, data) => axiosInstance.put(API_ENDPOINTS.BOARDS.UPDATE(id), data),
     delete: (id) => axiosInstance.delete(API_ENDPOINTS.BOARDS.DELETE(id)),
   },
@@ -64,9 +64,9 @@ export const api = {
   },
 
   issues: {
-    getAll: (boardId) => axiosInstance.get(API_ENDPOINTS.ISSUES.LIST(boardId)),
+    getAll: (boardId, params = {}) => axiosInstance.get(API_ENDPOINTS.ISSUES.LIST(boardId), { params }),
     getBacklog: (projectId) => axiosInstance.get(API_ENDPOINTS.ISSUES.BACKLOG(projectId)),
-    getBySprint: (sprintId) => axiosInstance.get(API_ENDPOINTS.ISSUES.BY_SPRINT(sprintId)),
+    getBySprint: (sprintId, params = {}) => axiosInstance.get(API_ENDPOINTS.ISSUES.BY_SPRINT(sprintId), { params }),
     getById: (id) => axiosInstance.get(API_ENDPOINTS.ISSUES.DETAIL(id)),
     create: (boardId, data) => axiosInstance.post(API_ENDPOINTS.ISSUES.CREATE(boardId), data),
     update: (id, data) => axiosInstance.put(API_ENDPOINTS.ISSUES.UPDATE(id), data),
