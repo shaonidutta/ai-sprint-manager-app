@@ -30,7 +30,6 @@ export const API_ENDPOINTS = {
   },
   BOARDS: {
     LIST: (projectId) => `/projects/${projectId}/boards`,
-    CREATE: (projectId) => `/projects/${projectId}/boards`,
     DETAIL: (id) => `/boards/${id}`,
     UPDATE: (id) => `/boards/${id}`,
     DELETE: (id) => `/boards/${id}`

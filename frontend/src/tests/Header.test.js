@@ -73,7 +73,6 @@ describe('Header Component', () => {
     
     // Check dropdown items
     expect(screen.getByText('Create project')).toBeInTheDocument();
-    expect(screen.getByText('Create board')).toBeInTheDocument();
     expect(screen.getByText('Create issue')).toBeInTheDocument();
   });
 
@@ -137,22 +136,7 @@ describe('Header Component', () => {
     expect(screen.queryByText('Create project')).not.toBeInTheDocument();
   });
 
-  it('opens Create Board modal when clicking Create board', () => {
-    render(
-      <TestWrapper>
-        <Header />
-      </TestWrapper>
-    );
 
-    const createButton = screen.getByText('Create');
-    fireEvent.click(createButton);
-    
-    const createBoardButton = screen.getByText('Create board');
-    fireEvent.click(createBoardButton);
-    
-    // Dropdown should be closed
-    expect(screen.queryByText('Create board')).not.toBeInTheDocument();
-  });
 
   it('opens Create Issue modal when clicking Create issue', () => {
     render(

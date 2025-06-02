@@ -7,7 +7,7 @@ class TimeLog {
     this.id = data.id || null;
     this.issue_id = data.issue_id || data.issueId || null;
     this.user_id = data.user_id || data.userId || null;
-    this.time_spent = data.time_spent || data.timeSpent || 0;
+    this.hours_logged = data.hours_logged || data.hoursLogged || data.time_spent || data.timeSpent || 0;
     this.description = data.description || null;
     this.logged_date = data.logged_date || data.loggedDate || null;
     this.created_at = data.created_at || data.createdAt || null;
@@ -26,12 +26,12 @@ class TimeLog {
       errors.push('User ID is required');
     }
 
-    if (!this.time_spent || this.time_spent <= 0) {
-      errors.push('Time spent must be greater than 0');
+    if (!this.hours_logged || this.hours_logged <= 0) {
+      errors.push('Hours logged must be greater than 0');
     }
 
-    if (this.time_spent > 24 * 60) { // 24 hours in minutes
-      errors.push('Time spent cannot exceed 24 hours per log');
+    if (this.hours_logged > 24) { // 24 hours maximum
+      errors.push('Hours logged cannot exceed 24 hours per log');
     }
 
     if (!this.logged_date) {
@@ -85,14 +85,14 @@ class TimeLog {
       }
 
       const query = `
-        INSERT INTO time_logs (issue_id, user_id, time_spent, description, logged_date) 
+        INSERT INTO time_logs (issue_id, user_id, hours_logged, description, logged_date)
         VALUES (?, ?, ?, ?, ?)
       `;
       
       const values = [
         timeLog.issue_id,
         timeLog.user_id,
-        timeLog.time_spent,
+        timeLog.hours_logged,
         timeLog.description ? timeLog.description.trim() : null,
         timeLog.logged_date
       ];

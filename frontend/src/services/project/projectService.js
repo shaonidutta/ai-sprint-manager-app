@@ -65,12 +65,6 @@ export const projectService = {
     getBoards: async (projectId) => {
       const response = await api.get(API_ENDPOINTS.BOARDS.LIST(projectId));
       return response.data;
-    },
-
-    // Create board
-    createBoard: async (projectId, data) => {
-      const response = await api.post(API_ENDPOINTS.BOARDS.CREATE(projectId), data);
-      return response.data;
     }
   },
 

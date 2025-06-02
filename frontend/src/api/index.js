@@ -49,7 +49,6 @@ export const api = {
   boards: {
     getAll: (projectId) => axiosInstance.get(API_ENDPOINTS.BOARDS.LIST(projectId)),
     getById: (id) => axiosInstance.get(API_ENDPOINTS.BOARDS.DETAIL(id)),
-    create: (projectId, data) => axiosInstance.post(API_ENDPOINTS.BOARDS.CREATE(projectId), data),
     update: (id, data) => axiosInstance.put(API_ENDPOINTS.BOARDS.UPDATE(id), data),
     delete: (id) => axiosInstance.delete(API_ENDPOINTS.BOARDS.DELETE(id)),
   },

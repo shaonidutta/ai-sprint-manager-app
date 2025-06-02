@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, Button } from '../../components/common';
+import { Card, Button, BlockedBadge } from '../../components/common';
 import { IssueDetailModal } from '../../components/issues';
 import { api } from '../../api';
 import {
@@ -56,6 +56,9 @@ const DroppableColumn = ({ column, issues, children, isOver, isDragging }) => {
 
 // Draggable Issue Card Component
 const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
+  // Check if issue is blocked
+  const isBlocked = issue.blocked_reason && issue.blocked_reason.trim() !== '';
+
   const {
     attributes,
     listeners,
@@ -63,7 +66,10 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: issue.id.toString() });
+  } = useSortable({
+    id: issue.id.toString(),
+    disabled: isBlocked // Disable dragging for blocked issues
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -145,18 +151,32 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={`group relative bg-white border border-gray-200 rounded-lg transition-all duration-150 hover:shadow-md hover:border-blue-300 ${
+      className={`group relative bg-white rounded-lg transition-all duration-150 ${
+        isBlocked
+          ? 'border-2 border-red-300 bg-red-50 opacity-80'
+          : 'border border-gray-200 hover:shadow-md hover:border-blue-300'
+      } ${
         isDragging ? 'shadow-lg border-blue-400 transform rotate-1' : ''
       }`}
     >
       {/* Drag Handle */}
       <div
         {...listeners}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cursor-grab active:cursor-grabbing"
+        className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+          isBlocked
+            ? 'cursor-not-allowed text-red-300'
+            : 'cursor-grab active:cursor-grabbing text-gray-400'
+        }`}
       >
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-        </svg>
+        {isBlocked ? (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+          </svg>
+        )}
       </div>
 
       {/* Card Content */}
@@ -177,6 +197,15 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
               </span>
 
               <div className="flex items-center space-x-2">
+                {/* Blocked Badge */}
+                {isBlocked && (
+                  <BlockedBadge
+                    blocked_reason={issue.blocked_reason}
+                    size="sm"
+                    showIcon={true}
+                  />
+                )}
+
                 {/* Story Points */}
                 {issue.story_points && (
                   <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded font-medium">
@@ -267,7 +296,7 @@ const BoardKanbanPage = () => {
       setBoards(boardsData);
       
       // Auto-select first board if available
-      if (boardsData.length > 0 && !selectedBoard) {
+      if (boardsData.length > 0) {
         setSelectedBoard(boardsData[0].id.toString());
       }
     } catch (err) {
@@ -332,9 +361,7 @@ const BoardKanbanPage = () => {
     }
   };
 
-  const handleBoardChange = (e) => {
-    setSelectedBoard(e.target.value);
-  };
+
 
   const getIssuesByStatus = (status) => {
     return issues.filter(issue => issue.status === status);
@@ -511,23 +538,7 @@ const BoardKanbanPage = () => {
               </select>
             </div>
 
-            {/* Board Selector */}
-            {boards.length > 0 && (
-              <div className="min-w-0 flex-1">
-                <select
-                  value={selectedBoard}
-                  onChange={handleBoardChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Board...</option>
-                  {boards.map((board) => (
-                    <option key={board.id} value={board.id}>
-                      {board.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+
           </div>
 
           {/* View Toggle */}
@@ -587,18 +598,6 @@ const BoardKanbanPage = () => {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Select a project</h3>
               <p className="text-gray-600">Choose a project to view its boards and issues.</p>
-            </div>
-          </div>
-        ) : !selectedBoard ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a board</h3>
-              <p className="text-gray-600">Choose a board to view its issues.</p>
             </div>
           </div>
         ) : view === 'board' ? (

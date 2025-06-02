@@ -391,22 +391,22 @@ class Sprint {
         id: row.id,
         title: row.title,
         description: row.description,
-        issueType: row.issue_type,
+        issue_type: row.issue_type,  // Keep snake_case for consistency
         status: row.status,
         priority: row.priority,
-        storyPoints: row.story_points,
+        story_points: row.story_points,  // Keep snake_case for consistency
         assignee: row.assignee_id ? {
           id: row.assignee_id,
-          firstName: row.assignee_first_name,
-          lastName: row.assignee_last_name
+          first_name: row.assignee_first_name,  // Keep snake_case for consistency
+          last_name: row.assignee_last_name     // Keep snake_case for consistency
         } : null,
         reporter: {
           id: row.reporter_id,
-          firstName: row.reporter_first_name,
-          lastName: row.reporter_last_name
+          first_name: row.reporter_first_name,  // Keep snake_case for consistency
+          last_name: row.reporter_last_name     // Keep snake_case for consistency
         },
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
+        created_at: row.created_at,  // Keep snake_case for consistency
+        updated_at: row.updated_at   // Keep snake_case for consistency
       }));
     } catch (error) {
       logger.error('Error getting sprint issues:', error);

@@ -14,11 +14,7 @@ export const boardService = {
     return response.data;
   },
 
-  // Create new board
-  createBoard: async (projectId, data) => {
-    const response = await api.post(API_ENDPOINTS.BOARDS.CREATE(projectId), data);
-    return response.data;
-  },
+
 
   // Update board
   updateBoard: async (boardId, data) => {

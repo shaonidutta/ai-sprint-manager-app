@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, Button } from '../../components/common';
-import { CreateBoardModal } from '../../components/boards';
 import { api } from '../../api';
 
 const ProjectDetailPage = () => {
@@ -13,7 +12,6 @@ const ProjectDetailPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [boards, setBoards] = useState([]);
   const [boardLoading, setBoardLoading] = useState(false);
-  const [showCreateBoardModal, setShowCreateBoardModal] = useState(false);
 
   // Fetch project details
   const fetchProject = async () => {
@@ -63,11 +61,7 @@ const ProjectDetailPage = () => {
     }
   }, [id]);
 
-  const handleBoardCreated = (newBoard) => {
-    console.log('[ProjectDetailPage] Board created:', newBoard);
-    setBoards(prev => [newBoard, ...prev]);
-    setShowCreateBoardModal(false);
-  };
+
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -190,7 +184,6 @@ const ProjectDetailPage = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'boards', label: 'Boards' },
     { id: 'team', label: 'Team' },
     { id: 'ai', label: 'AI Features' }
   ];
@@ -272,13 +265,13 @@ const ProjectDetailPage = () => {
               </Button>
               {boards.length > 0 && (
                 <Button
-                  onClick={() => setActiveTab('boards')}
+                  onClick={() => navigate(`/board?project=${id}`)}
                   className="transition-all duration-150 hover:shadow-md"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
                   </svg>
-                  View Boards ({boards.length})
+                  View Boards
                 </Button>
               )}
             </div>
@@ -376,26 +369,18 @@ const ProjectDetailPage = () => {
                   <Button
                     fullWidth
                     variant="outline"
-                    onClick={() => setActiveTab('boards')}
+                    onClick={() => navigate(`/board?project=${id}`)}
                     className="h-12 transition-all duration-150 hover:shadow-md hover:scale-105"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
                     </svg>
-                    View Boards ({boards.length})
+                    View Boards
                   </Button>
                 ) : (
-                  <Button
-                    fullWidth
-                    variant="outline"
-                    onClick={() => setShowCreateBoardModal(true)}
-                    className="h-12 transition-all duration-150 hover:shadow-md hover:scale-105"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Create First Board
-                  </Button>
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">No boards available</p>
+                  </div>
                 )}
                 <Button
                   fullWidth
@@ -423,145 +408,7 @@ const ProjectDetailPage = () => {
           </div>
         )}
 
-        {activeTab === 'boards' && (
-          <div className="space-y-8">
-            {/* Boards Header */}
-            <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                <div>
-                  <h2 className="text-2xl font-bold text-neutral-900">Project Boards</h2>
-                  <p className="text-neutral-600 mt-1">Manage and organize your project work with boards</p>
-                </div>
-                <Button
-                  onClick={() => setShowCreateBoardModal(true)}
-                  className="transition-all duration-150 hover:shadow-md min-h-[44px]"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Create Board
-                </Button>
-              </div>
-            </div>
 
-            {boardLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(3)].map((_, index) => (
-                  <Card key={index} className="p-6 animate-pulse border-0 shadow-sm">
-                    <div className="h-6 bg-neutral-200 rounded w-3/4 mb-4"></div>
-                    <div className="h-4 bg-neutral-200 rounded w-1/2 mb-4"></div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="h-12 bg-neutral-200 rounded"></div>
-                      <div className="h-12 bg-neutral-200 rounded"></div>
-                      <div className="h-12 bg-neutral-200 rounded"></div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : boards.length > 0 ? (
-              <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
-                {boards.filter(board => board && board.id && board.name).map((board) => (
-                  <div
-                    key={board.id}
-                    className="
-                      group p-6 border-b border-neutral-200 last:border-b-0
-                      hover:bg-neutral-50 transition-all duration-150 ease-in-out
-                      cursor-pointer min-h-[44px]
-                    "
-                    onClick={() => {
-                      console.log('[ProjectDetailPage] Navigating to board:', board.id, 'for project:', id);
-                      navigate(`/board?project=${id}`);
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        navigate(`/board?project=${id}`);
-                      }
-                    }}
-                    aria-label={`Open ${board.name} board`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      {/* Board Information */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="
-                            text-lg font-semibold text-neutral-900
-                            truncate
-                            group-hover:text-primary-600 transition-colors duration-150
-                          ">
-                            {board.name}
-                          </h3>
-                          {board.is_default && (
-                            <span className="text-xs bg-primary-100 text-primary-800 px-3 py-1 rounded-full font-medium flex-shrink-0">
-                              Default
-                            </span>
-                          )}
-                        </div>
-                        {board.description && (
-                          <p className="text-neutral-600 text-sm line-clamp-2 leading-relaxed">
-                            {board.description}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Action Button */}
-                      <div className="flex-shrink-0 self-start sm:self-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/board?project=${id}`);
-                          }}
-                          className="
-                            inline-flex items-center gap-2 px-4 py-2
-                            text-sm font-medium text-neutral-700
-                            border border-neutral-300 rounded-lg bg-white
-                            hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700
-                            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
-                            transition-all duration-150 ease-in-out
-                            group-hover:border-primary-300 group-hover:text-primary-700
-                            w-full sm:w-auto justify-center sm:justify-start
-                            min-h-[44px]
-                          "
-                          aria-label={`Open ${board.name} board`}
-                        >
-                          Open Board
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <Card className="p-12 text-center border-0 shadow-sm">
-                <div className="max-w-md mx-auto">
-                  <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-2xl font-semibold text-neutral-900 mb-3">No Boards Found</h3>
-                  <p className="text-neutral-600 mb-8 text-lg leading-relaxed">
-                    This project doesn't have any boards yet. Create your first board to start managing issues and organizing your work.
-                  </p>
-                  <Button
-                    onClick={() => setShowCreateBoardModal(true)}
-                    className="transition-all duration-150 hover:shadow-md min-h-[44px] px-8"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Create First Board
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </div>
-        )}
 
         {activeTab === 'team' && (
           <Card className="p-12 text-center border-0 shadow-sm">
@@ -765,13 +612,7 @@ const ProjectDetailPage = () => {
           </div>
         )}
 
-        {/* Create Board Modal */}
-        <CreateBoardModal
-          isOpen={showCreateBoardModal}
-          onClose={() => setShowCreateBoardModal(false)}
-          projectId={id}
-          onBoardCreated={handleBoardCreated}
-        />
+
     </div>
   );
 };

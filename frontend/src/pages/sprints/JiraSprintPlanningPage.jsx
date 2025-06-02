@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Input } from '../../components/common';
+import { Card, Button, Input, BlockedBadge } from '../../components/common';
 import { CreateIssueModal, IssueDetailModal } from '../../components/issues';
 import { useSprintPlanning } from '../../context/SprintPlanningContext';
 import { api } from '../../api';
@@ -26,7 +26,11 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // Draggable Issue Card Component
-const DraggableIssueCard = ({ issue, onClick }) => {
+const DraggableIssueCard = ({ issue, onClick, sprintStatus = null, isInSprint = false }) => {
+  // Determine if dragging should be disabled
+  // Disable dragging if the issue is in an active sprint OR if the issue is blocked
+  const isBlocked = issue.blocked_reason && issue.blocked_reason.trim() !== '';
+  const shouldDisableDragging = (isInSprint && sprintStatus === 'Active') || isBlocked;
 
   const {
     attributes,
@@ -35,20 +39,21 @@ const DraggableIssueCard = ({ issue, onClick }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: issue.id.toString() });
+  } = useSortable({
+    id: issue.id.toString(),
+    disabled: shouldDisableDragging
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : shouldDisableDragging ? 0.7 : 1,
   };
 
   const getIssueTypeIcon = (type) => {
-    // Debug logging to see what type values we're actually getting
-    console.log('🔍 Issue type received:', type, 'Type:', typeof type);
-
     // Normalize the type to handle different cases and formats
-    const normalizedType = type ? type.toString().trim() : '';
+    // Default to 'Task' if type is undefined or null
+    const normalizedType = type ? type.toString().trim() : 'Task';
 
     switch (normalizedType) {
       case 'Story':
@@ -83,10 +88,10 @@ const DraggableIssueCard = ({ issue, onClick }) => {
           </div>
         );
       default:
-        console.warn('🚨 Unknown issue type:', type, 'Falling back to default icon');
+        // Default to Task icon for unknown types
         return (
-          <div className="w-5 h-5 bg-gray-500 rounded flex items-center justify-center">
-            <span className="text-white text-xs font-bold">?</span>
+          <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">T</span>
           </div>
         );
     }
@@ -129,19 +134,42 @@ const DraggableIssueCard = ({ issue, onClick }) => {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={`group relative bg-white border border-gray-200 rounded-lg transition-all duration-150 hover:shadow-md hover:border-blue-300 ${
+      className={`group relative bg-white rounded-lg transition-all duration-150 ${
+        isBlocked
+          ? 'border-2 border-red-300 bg-red-50'
+          : 'border border-gray-200'
+      } ${
+        shouldDisableDragging
+          ? 'opacity-70'
+          : 'hover:shadow-md hover:border-blue-300'
+      } ${
         isDragging ? 'shadow-lg border-blue-400 transform rotate-1' : ''
       }`}
     >
       {/* Drag Handle */}
       <div
         {...listeners}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cursor-grab active:cursor-grabbing"
+        className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+          shouldDisableDragging
+            ? 'cursor-not-allowed text-gray-300'
+            : 'cursor-grab active:cursor-grabbing text-gray-400'
+        }`}
       >
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
         </svg>
       </div>
+
+      {/* Active Sprint Indicator */}
+      {shouldDisableDragging && (
+        <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+        </div>
+      )}
 
       {/* Card Content */}
       <div className="p-4">
@@ -161,6 +189,15 @@ const DraggableIssueCard = ({ issue, onClick }) => {
               </span>
 
               <div className="flex items-center space-x-2">
+                {/* Blocked Badge */}
+                {isBlocked && (
+                  <BlockedBadge
+                    blocked_reason={issue.blocked_reason}
+                    size="sm"
+                    showIcon={true}
+                  />
+                )}
+
                 {/* Status Badge */}
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(issue.status)}`}>
                   {issue.status}
@@ -204,10 +241,16 @@ const DroppableSprintArea = ({ sprint, children }) => {
     id: `sprint-${sprint.id}`,
   });
 
+  const isActive = sprint.status === 'Active';
+
   return (
     <div
       ref={setNodeRef}
-      className={`p-4 sm:p-6 lg:p-8 min-h-[120px] bg-gray-50 rounded-b-xl transition-colors duration-150 ${
+      className={`p-4 sm:p-6 lg:p-8 min-h-[120px] rounded-b-xl transition-colors duration-150 ${
+        isActive
+          ? 'bg-green-50'
+          : 'bg-gray-50'
+      } ${
         isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
       }`}
     >
@@ -530,6 +573,19 @@ const JiraSprintPlanningPage = () => {
       // Only allow moving from sprint to backlog
       if (!sourceSprintId) return;
 
+      // Find the source sprint to check if it's active
+      const sourceSprint = sprints.find(sprint => sprint.id === sourceSprintId);
+
+      console.log('🔍 Drop to backlog - Source sprint:', sourceSprint?.name, 'Status:', sourceSprint?.status);
+
+      // Prevent moving issues from active sprints to backlog
+      if (sourceSprint && sourceSprint.status === 'Active') {
+        console.log('🚫 Cannot move issue from active sprint to backlog');
+        alert('Cannot move issues from an active sprint back to backlog. Complete the sprint first.');
+        setDragLoading(false);
+        return;
+      }
+
       try {
         // Update issue to remove sprint assignment
         await api.issues.update(activeIssue.id, { sprint_id: null });
@@ -710,7 +766,11 @@ const JiraSprintPlanningPage = () => {
             <div className="space-y-8">
               {/* Sprint Sections */}
               {sprints.map((sprint) => (
-                <div key={sprint.id} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-150">
+                <div key={sprint.id} className={`rounded-xl border shadow-sm hover:shadow-md transition-all duration-150 ${
+                  sprint.status === 'Active'
+                    ? 'bg-green-50 border-green-200 shadow-green-100'
+                    : 'bg-white border-gray-200'
+                }`}>
                   <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200">
                     <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                       <div className="flex items-center space-x-4">
@@ -722,13 +782,23 @@ const JiraSprintPlanningPage = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
                             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{sprint.name}</h2>
-                            <span className={`inline-flex px-3 py-1.5 text-xs font-semibold rounded-full mt-2 sm:mt-0 ${
-                              sprint.status === 'Active' ? 'bg-green-100 text-green-800' :
-                              sprint.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {sprint.status}
-                            </span>
+                            <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                              <span className={`inline-flex px-3 py-1.5 text-xs font-semibold rounded-full ${
+                                sprint.status === 'Active' ? 'bg-green-100 text-green-800 border border-green-300' :
+                                sprint.status === 'Completed' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                                'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                              }`}>
+                                {sprint.status}
+                              </span>
+                              {sprint.status === 'Active' && (
+                                <div className="flex items-center text-xs text-green-700">
+                                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                  </svg>
+                                  Locked
+                                </div>
+                              )}
+                            </div>
                           </div>
                           {sprint.goal && (
                             <p className="text-sm text-gray-600 mt-1 truncate">{sprint.goal}</p>
@@ -769,7 +839,13 @@ const JiraSprintPlanningPage = () => {
                       >
                         <div className="space-y-4">
                           {sprint.issues.filter(issue => issue != null).map((issue) => (
-                            <DraggableIssueCard key={issue.id} issue={issue} onClick={handleIssueClick} />
+                            <DraggableIssueCard
+                              key={issue.id}
+                              issue={issue}
+                              onClick={handleIssueClick}
+                              sprintStatus={sprint.status}
+                              isInSprint={true}
+                            />
                           ))}
                         </div>
                       </SortableContext>
@@ -859,7 +935,13 @@ const JiraSprintPlanningPage = () => {
                             (issue.description && issue.description.toLowerCase().includes(searchTerm.toLowerCase()))
                           )
                           .map((issue) => (
-                            <DraggableIssueCard key={issue.id} issue={issue} onClick={handleIssueClick} />
+                            <DraggableIssueCard
+                              key={issue.id}
+                              issue={issue}
+                              onClick={handleIssueClick}
+                              sprintStatus={null}
+                              isInSprint={false}
+                            />
                           ))}
                       </div>
                     ) : (
@@ -886,11 +968,34 @@ const JiraSprintPlanningPage = () => {
 
             <DragOverlay>
               {activeId ? (
-                <DraggableIssueCard
-                  issue={backlogIssues.find(issue => issue?.id?.toString() === activeId) ||
-                         sprints.flatMap(s => s.issues || []).find(issue => issue?.id?.toString() === activeId)}
-                  onClick={() => {}}
-                />
+                (() => {
+                  // Find the issue and determine its context
+                  let issue = backlogIssues.find(issue => issue?.id?.toString() === activeId);
+                  let sprintStatus = null;
+                  let isInSprint = false;
+
+                  if (!issue) {
+                    // Look in sprints
+                    for (const sprint of sprints) {
+                      const foundIssue = sprint.issues?.find(issue => issue?.id?.toString() === activeId);
+                      if (foundIssue) {
+                        issue = foundIssue;
+                        sprintStatus = sprint.status;
+                        isInSprint = true;
+                        break;
+                      }
+                    }
+                  }
+
+                  return issue ? (
+                    <DraggableIssueCard
+                      issue={issue}
+                      onClick={() => {}}
+                      sprintStatus={sprintStatus}
+                      isInSprint={isInSprint}
+                    />
+                  ) : null;
+                })()
               ) : null}
             </DragOverlay>
           </DndContext>
