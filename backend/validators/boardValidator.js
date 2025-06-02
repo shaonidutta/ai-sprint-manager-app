@@ -88,7 +88,7 @@ const issueFiltersValidation = [
     .withMessage('Invalid status. Must be one of: To Do, In Progress, Done, Blocked'),
   
   query('assigneeId')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('Assignee ID must be a positive integer'),
   

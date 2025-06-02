@@ -208,10 +208,12 @@ const IssueModal = ({
             onChange={handleInputChange}
             options={[
               { value: '', label: 'Unassigned' },
-              ...users.map(user => ({
-                value: user.id,
-                label: user.name,
-              })),
+              ...users
+                .filter(user => user && user.id != null)
+                .map(user => ({
+                  value: user.id,
+                  label: user.name || user.email || 'Unknown User',
+                })),
             ]}
           />
         </div>

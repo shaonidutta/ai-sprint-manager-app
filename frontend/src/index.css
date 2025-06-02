@@ -63,4 +63,96 @@
   .input-field {
     @apply w-full px-3 py-2 border border-neutral-300 rounded-atlassian focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
   }
+
+  /* Enhanced Modal Animations */
+  .animate-slideUp {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .animate-scaleIn {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Enhanced Form Styles */
+  .form-field-enhanced {
+    @apply transition-all duration-150 border-2 border-neutral-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-100;
+  }
+
+  .form-field-enhanced:hover {
+    @apply border-neutral-300;
+  }
+
+  /* Issue Type Cards */
+  .issue-type-card {
+    @apply relative p-4 rounded-lg border-2 transition-all duration-150 hover:shadow-md cursor-pointer;
+  }
+
+  .issue-type-card.selected {
+    @apply shadow-sm;
+  }
+
+  .issue-type-card:hover {
+    @apply border-neutral-300;
+  }
+
+  /* Priority Cards */
+  .priority-card {
+    @apply relative p-3 rounded-lg border-2 transition-all duration-150 hover:shadow-md cursor-pointer;
+  }
+
+  .priority-card.selected {
+    @apply bg-neutral-50 border-neutral-400 shadow-sm;
+  }
+
+  .priority-card:hover {
+    @apply border-neutral-300;
+  }
+
+  /* Assignee Cards */
+  .assignee-card {
+    @apply w-full flex items-center space-x-3 p-3 rounded-lg border-2 transition-all duration-150 hover:shadow-sm cursor-pointer;
+  }
+
+  .assignee-card.selected {
+    @apply bg-primary-50 border-primary-300 shadow-sm;
+  }
+
+  .assignee-card:hover {
+    @apply border-neutral-300;
+  }
 }
