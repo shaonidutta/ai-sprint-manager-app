@@ -26,7 +26,7 @@ const ScopeCreepPage = () => {
         originalIssues: selectedSprint.originalIssues,
         currentIssues: selectedSprint.currentIssues
       });
-      setAnalysis(response.data.analysis);
+      setAnalysis(response.data.scope_analysis); // Corrected path to analysis data
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to analyze scope creep');
     } finally {
@@ -97,67 +97,65 @@ const ScopeCreepPage = () => {
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Analysis Summary</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className={`flex items-center justify-between p-6 rounded-lg ${
-                    analysis.scopeIncreased 
-                      ? 'bg-red-50 border border-red-200' 
+                    analysis.scope_creep_detected
+                      ? 'bg-red-50 border border-red-200'
                       : 'bg-green-50 border border-green-200'
                   }`}>
                     <div>
                       <p className={`text-sm font-medium ${
-                        analysis.scopeIncreased ? 'text-red-700' : 'text-green-700'
+                        analysis.scope_creep_detected ? 'text-red-700' : 'text-green-700'
                       }`}>
-                        Scope Change
+                        Scope Creep Detected
                       </p>
                       <p className={`text-3xl font-bold ${
-                        analysis.scopeIncreased ? 'text-red-900' : 'text-green-900'
+                        analysis.scope_creep_detected ? 'text-red-900' : 'text-green-900'
                       }`}>
-                        {analysis.percentageIncrease > 0 
-                          ? `+${analysis.percentageIncrease}%` 
-                          : `${analysis.percentageIncrease}%`}
+                        {analysis.scope_creep_detected ? `Yes (Score: ${analysis.scope_creep_score || 'N/A'})` : 'No'}
                       </p>
                     </div>
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                      analysis.scopeIncreased ? 'bg-red-100' : 'bg-green-100'
+                      analysis.scope_creep_detected ? 'bg-red-100' : 'bg-green-100'
                     }`}>
-                      <span className="text-2xl">{analysis.scopeIncreased ? '⚠️' : '✅'}</span>
+                      <span className="text-2xl">{analysis.scope_creep_detected ? '⚠️' : '✅'}</span>
                     </div>
                   </div>
 
                   <div className={`flex items-center justify-between p-6 rounded-lg ${
-                    analysis.impact === 'High' 
-                      ? 'bg-red-50 border border-red-200' 
-                      : analysis.impact === 'Medium'
+                    analysis.severity === 'High'
+                      ? 'bg-red-50 border border-red-200'
+                      : analysis.severity === 'Medium'
                         ? 'bg-yellow-50 border border-yellow-200'
-                        : 'bg-green-50 border border-green-200'
+                        : 'bg-green-50 border border-green-200' // Default to green for Low or other
                   }`}>
                     <div>
                       <p className={`text-sm font-medium ${
-                        analysis.impact === 'High' 
-                          ? 'text-red-700' 
-                          : analysis.impact === 'Medium'
+                        analysis.severity === 'High'
+                          ? 'text-red-700'
+                          : analysis.severity === 'Medium'
                             ? 'text-yellow-700'
                             : 'text-green-700'
                       }`}>
-                        Impact Level
+                        Severity Level
                       </p>
                       <p className={`text-3xl font-bold ${
-                        analysis.impact === 'High' 
-                          ? 'text-red-900' 
-                          : analysis.impact === 'Medium'
+                        analysis.severity === 'High'
+                          ? 'text-red-900'
+                          : analysis.severity === 'Medium'
                             ? 'text-yellow-900'
                             : 'text-green-900'
                       }`}>
-                        {analysis.impact}
+                        {analysis.severity || 'N/A'}
                       </p>
                     </div>
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                      analysis.impact === 'High' 
-                        ? 'bg-red-100' 
-                        : analysis.impact === 'Medium'
+                      analysis.severity === 'High'
+                        ? 'bg-red-100'
+                        : analysis.severity === 'Medium'
                           ? 'bg-yellow-100'
                           : 'bg-green-100'
                     }`}>
                       <span className="text-2xl">
-                        {analysis.impact === 'High' ? '🔴' : analysis.impact === 'Medium' ? '🟡' : '🟢'}
+                        {analysis.severity === 'High' ? '🔴' : analysis.severity === 'Medium' ? '🟡' : '🟢'}
                       </span>
                     </div>
                   </div>

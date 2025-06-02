@@ -52,7 +52,7 @@ const SprintSelector = ({ projectId, onSprintSelect, className = '' }) => {
             <option value="">Select a sprint...</option>
             {sprints.map((sprint) => (
               <option key={sprint.id} value={sprint.id}>
-                {sprint.name} ({new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()})
+                {sprint.name} ({new Date(sprint.start_date).toLocaleDateString()} - {new Date(sprint.end_date).toLocaleDateString()})
               </option>
             ))}
           </select>

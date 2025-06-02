@@ -295,6 +295,66 @@ const createTables = async (connection) => {
       INDEX idx_resource_type (resource_type),
       INDEX idx_resource_id (resource_id),
       INDEX idx_created_at (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+    // Team Member Capacity table
+    `CREATE TABLE IF NOT EXISTS team_member_capacity (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      sprint_id INT NOT NULL,
+      available_hours DECIMAL(5,2) DEFAULT 40.0,
+      capacity_percentage DECIMAL(5,2) DEFAULT 100.0,
+      story_points_capacity INT DEFAULT 10,
+      skill_tags JSON,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (sprint_id) REFERENCES sprints(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_user_sprint (user_id, sprint_id),
+      INDEX idx_user_id (user_id),
+      INDEX idx_sprint_id (sprint_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+    // Risk Heatmap Data table
+    `CREATE TABLE IF NOT EXISTS risk_heatmap_data (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      project_id INT NOT NULL,
+      sprint_id INT NULL,
+      risk_type ENUM('workload', 'dependency', 'skill_mismatch', 'timeline', 'capacity') NOT NULL,
+      entity_type ENUM('team_member', 'issue', 'sprint') NOT NULL,
+      entity_id INT NOT NULL,
+      risk_level ENUM('Low', 'Medium', 'High', 'Critical') NOT NULL,
+      risk_score DECIMAL(5,2) NOT NULL,
+      risk_factors JSON,
+      mitigation_suggestions JSON,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (sprint_id) REFERENCES sprints(id) ON DELETE CASCADE,
+      INDEX idx_project_id (project_id),
+      INDEX idx_sprint_id (sprint_id),
+      INDEX idx_risk_type (risk_type),
+      INDEX idx_entity_type (entity_type),
+      INDEX idx_risk_level (risk_level)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+    // Team Member Skills table
+    `CREATE TABLE IF NOT EXISTS team_member_skills (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      project_id INT NOT NULL,
+      skill_name VARCHAR(100) NOT NULL,
+      proficiency_level ENUM('Beginner', 'Intermediate', 'Advanced', 'Expert') NOT NULL,
+      years_experience DECIMAL(3,1) DEFAULT 0.0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_user_project_skill (user_id, project_id, skill_name),
+      INDEX idx_user_id (user_id),
+      INDEX idx_project_id (project_id),
+      INDEX idx_skill_name (skill_name)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   ];
 

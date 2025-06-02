@@ -65,16 +65,17 @@ export const aiUtils = {
     const errors = {};
 
     if (!data.sprintId) {
-      errors.sprintId = 'Sprint ID is required';
+      errors.sprintId = 'Sprint selection is required';
     }
 
     if (!data.originalScope || data.originalScope.trim().length === 0) {
       errors.originalScope = 'Original scope description is required';
+    } else if (data.originalScope.trim().length > 1000) {
+      errors.originalScope = 'Original scope description must be less than 1000 characters';
     }
 
-    if (!data.currentIssues || !Array.isArray(data.currentIssues) || data.currentIssues.length === 0) {
-      errors.currentIssues = 'Current issues list is required';
-    }
+    // Remove strict currentIssues validation - it's fetched automatically from the selected sprint
+    // The backend will handle cases where sprints have no issues
 
     return {
       isValid: Object.keys(errors).length === 0,
@@ -144,13 +145,66 @@ export const aiUtils = {
         };
 
       case 'scope-creep':
-        return {
+        console.log('🔍 INVESTIGATION: formatAIResponse called with type:', type);
+        console.log('🔍 INVESTIGATION: formatAIResponse raw response:', response);
+        console.log('🔍 INVESTIGATION: response.scope_analysis:', response.scope_analysis);
+        console.log('🔍 INVESTIGATION: response.data:', response.data);
+        console.log('🔍 INVESTIGATION: response.data?.scope_analysis:', response.data?.scope_analysis);
+
+        // Handle multiple nested response structures
+        const scopeAnalysis = response.scope_analysis || response.data?.scope_analysis || response;
+        console.log('🔍 INVESTIGATION: Extracted scopeAnalysis:', scopeAnalysis);
+        console.log('🔍 INVESTIGATION: scopeAnalysis type:', typeof scopeAnalysis);
+        console.log('🔍 INVESTIGATION: scopeAnalysis keys:', Object.keys(scopeAnalysis || {}));
+
+        // Extract individual fields with logging
+        const creepDetected = scopeAnalysis.scope_creep_detected || false;
+        const creepPercentage = scopeAnalysis.scope_creep_score || 0;
+        const severity = scopeAnalysis.severity || 'None';
+        const recommendations = scopeAnalysis.recommendations || [];
+        const riskFactors = scopeAnalysis.risk_factors || [];
+        const analysis = scopeAnalysis.analysis || {};
+        const sprintInfo = response.sprint_info || response.data?.sprint_info || null;
+
+        console.log('🔍 INVESTIGATION: Field extraction results:');
+        console.log('  - creepDetected:', creepDetected);
+        console.log('  - creepPercentage:', creepPercentage);
+        console.log('  - severity:', severity);
+        console.log('  - recommendations:', recommendations);
+        console.log('  - riskFactors:', riskFactors);
+        console.log('  - analysis:', analysis);
+        console.log('  - sprintInfo:', sprintInfo);
+
+        const affectedAreas = analysis ? [
+          {
+            title: 'Goal Alignment',
+            content: analysis.alignment_with_goal
+          },
+          {
+            title: 'Scope Expansion Indicators',
+            content: analysis.scope_expansion_indicators
+          },
+          {
+            title: 'Impact Assessment',
+            content: analysis.impact_assessment
+          }
+        ].filter(item => item.content) : [];
+
+        console.log('🔍 INVESTIGATION: affectedAreas:', affectedAreas);
+
+        const formattedResult = {
           ...baseFormat,
-          creepDetected: response.creepDetected || false,
-          creepPercentage: response.creepPercentage || 0,
-          affectedAreas: response.affectedAreas || [],
-          recommendations: response.recommendations || []
+          creepDetected,
+          creepPercentage,
+          severity,
+          affectedAreas,
+          recommendations,
+          riskFactors,
+          analysis,
+          sprintInfo
         };
+
+        return formattedResult;
 
       case 'risk-assessment':
         return {
@@ -195,6 +249,27 @@ export const aiUtils = {
       'Very Low': 'text-red-600 bg-red-100'
     };
     return colors[morale] || 'text-gray-600 bg-gray-100';
+  },
+
+  // Get scope creep severity color
+  getScopeCreepSeverityColor: (severity) => {
+    const colors = {
+      'None': 'text-green-700 bg-green-100 border-green-200',
+      'Low': 'text-green-700 bg-green-100 border-green-200',
+      'Medium': 'text-yellow-700 bg-yellow-100 border-yellow-200',
+      'High': 'text-orange-700 bg-orange-100 border-orange-200',
+      'Critical': 'text-red-700 bg-red-100 border-red-200'
+    };
+    return colors[severity] || colors.Medium;
+  },
+
+  // Get scope creep percentage color
+  getScopeCreepPercentageColor: (percentage) => {
+    if (percentage >= 80) return 'text-red-600 bg-red-100';
+    if (percentage >= 60) return 'text-orange-600 bg-orange-100';
+    if (percentage >= 40) return 'text-yellow-600 bg-yellow-100';
+    if (percentage >= 20) return 'text-blue-600 bg-blue-100';
+    return 'text-green-600 bg-green-100';
   },
 
   // Generate AI request summary

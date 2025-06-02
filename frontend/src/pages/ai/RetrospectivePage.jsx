@@ -9,6 +9,7 @@ const RetrospectivePage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [retrospective, setRetrospective] = useState(null);
+  const [sprintSummaryData, setSprintSummaryData] = useState(null); // New state for sprint summary
   const [selectedSprint, setSelectedSprint] = useState(null);
   const [options, setOptions] = useState({
     includeVelocityData: true,
@@ -29,7 +30,8 @@ const RetrospectivePage = () => {
         sprintId: selectedSprint.id,
         ...options
       });
-      setRetrospective(response.data.retrospective);
+      setRetrospective(response.data.retrospective_insights);
+      setSprintSummaryData(response.data.sprint_summary); // Set sprint summary data
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to generate retrospective insights');
     } finally {
@@ -128,7 +130,7 @@ const RetrospectivePage = () => {
           </div>
 
           {/* Results Section */}
-          {retrospective && (
+          {retrospective && sprintSummaryData && ( // Check for both states
             <div className="space-y-6">
               {/* Sprint Summary */}
               <div className="bg-white rounded-lg shadow-lg p-8">
@@ -137,28 +139,32 @@ const RetrospectivePage = () => {
                   <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-sm font-medium text-blue-700">Completed Points</p>
                     <p className="text-3xl font-bold text-blue-900 mt-2">
-                      {retrospective.sprintSummary.completedStoryPoints}
+                      {sprintSummaryData.completedPoints !== undefined ? sprintSummaryData.completedPoints : 'N/A'}
                     </p>
                   </div>
                   
                   <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm font-medium text-green-700">Planned Points</p>
                     <p className="text-3xl font-bold text-green-900 mt-2">
-                      {retrospective.sprintSummary.plannedStoryPoints}
+                      {sprintSummaryData.plannedPoints !== undefined ? sprintSummaryData.plannedPoints : 'N/A'}
                     </p>
                   </div>
                   
                   <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
                     <p className="text-sm font-medium text-purple-700">Completion Rate</p>
                     <p className="text-3xl font-bold text-purple-900 mt-2">
-                      {Math.round(retrospective.sprintSummary.completionRate * 100)}%
+                      {(sprintSummaryData.plannedPoints && sprintSummaryData.completedPoints !== undefined && sprintSummaryData.plannedPoints > 0)
+                        ? `${Math.round((sprintSummaryData.completedPoints / sprintSummaryData.plannedPoints) * 100)}%`
+                        : (sprintSummaryData.plannedPoints === 0 && sprintSummaryData.completedPoints === 0)
+                          ? '0%' // Or 'N/A' if preferred for 0/0 case
+                          : 'N/A'}
                     </p>
                   </div>
                   
                   <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
                     <p className="text-sm font-medium text-orange-700">Avg. Cycle Time</p>
                     <p className="text-3xl font-bold text-orange-900 mt-2">
-                      {retrospective.sprintSummary.averageCycleTime.toFixed(1)} days
+                      {sprintSummaryData.averageCycleTime !== undefined ? `${sprintSummaryData.averageCycleTime.toFixed(1)} days` : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -168,7 +174,7 @@ const RetrospectivePage = () => {
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Key Insights</h2>
                 <div className="space-y-4">
-                  {retrospective.insights.map((insight, index) => (
+                  {retrospective.productivity_insights && retrospective.productivity_insights.map((insight, index) => (
                     <div
                       key={index}
                       className={`p-6 border rounded-lg ${
@@ -180,20 +186,8 @@ const RetrospectivePage = () => {
                     >
                       <div className="flex items-start">
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className={`text-sm font-medium ${
-                              insight.category === 'Velocity' ? 'text-blue-700' :
-                              insight.category === 'Quality' ? 'text-green-700' :
-                              insight.category === 'Process' ? 'text-purple-700' :
-                              'text-orange-700'
-                            }`}>
-                              {insight.category}
-                            </p>
-                          </div>
-                          <p className="text-gray-900 mb-3">{insight.insight}</p>
-                          <div className={`p-4 rounded-lg bg-white bg-opacity-50`}>
-                            <p className="text-sm text-gray-600">{insight.evidence}</p>
-                          </div>
+                          {/* Simplified display for string-based insights */}
+                          <p className="text-gray-900">{insight}</p>
                         </div>
                       </div>
                     </div>
@@ -205,28 +199,15 @@ const RetrospectivePage = () => {
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Suggested Improvements</h2>
                 <div className="space-y-4">
-                  {retrospective.improvements.map((improvement, index) => (
+                  {retrospective.improvement_suggestions && retrospective.improvement_suggestions.map((improvement, index) => (
                     <div
                       key={index}
-                      className={`p-6 border rounded-lg ${
-                        improvement.priority === 'High' ? 'bg-red-50 border-red-200' :
-                        improvement.priority === 'Medium' ? 'bg-yellow-50 border-yellow-200' :
-                        'bg-green-50 border-green-200'
-                      }`}
+                      className="p-6 border rounded-lg bg-green-50 border-green-200" // Default styling for suggestions
                     >
                       <div className="flex items-start">
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-medium">{improvement.area}</p>
-                            <span className={`px-3 py-1 text-sm rounded-full ${
-                              improvement.priority === 'High' ? 'bg-red-100 text-red-800' :
-                              improvement.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-green-100 text-green-800'
-                            }`}>
-                              {improvement.priority} Priority
-                            </span>
-                          </div>
-                          <p className="text-gray-700">{improvement.suggestion}</p>
+                          {/* Simplified display for string-based improvements */}
+                          <p className="text-gray-700">{improvement}</p>
                         </div>
                       </div>
                     </div>

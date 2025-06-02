@@ -38,8 +38,8 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Package manager files
-package-lock.json
+# Package manager files (DO NOT ignore package-lock.json - it ensures consistent dependencies)
+# package-lock.json  # COMMENTED OUT - this should be committed!
 yarn.lock
 pnpm-lock.yaml
 
@@ -294,3 +294,16 @@ todo
 .sql
 TODO.md
 todo.md
+
+# Testing and debugging files (root level)
+test-*.js
+debug-*.js
+*-test.js
+*-debug.js
+
+# Additional files and testing directories
+additional/
+backend/testingfiles/
+
+# Temporary development files
+cors-test.html
