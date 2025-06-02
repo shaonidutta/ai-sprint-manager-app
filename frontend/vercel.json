@@ -12,9 +12,9 @@
   "env": {
     "VITE_API_BASE_URL": "https://ai-sprint-manager-app-1.onrender.com/api/v1",
     "VITE_API_TIMEOUT": "10000",
-    "VITE_APP_NAME": "AI Sprint Manager",
+    "VITE_APP_NAME": "SprintFlow",
     "VITE_APP_VERSION": "1.0.0",
-    "VITE_APP_DESCRIPTION": "AI-powered Sprint Management Tool",
+    "VITE_APP_DESCRIPTION": "SprintFlow - AI-powered Sprint Management Tool",
     "VITE_NODE_ENV": "production",
     "VITE_ENABLE_AI_FEATURES": "true",
     "VITE_ENABLE_TIME_TRACKING": "true",
