@@ -180,6 +180,15 @@ class BoardController {
 
       const issues = await board.getIssues(options);
 
+      // Add cache-busting headers for backlog queries to ensure fresh data
+      if (options.backlogOnly) {
+        res.set({
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        });
+      }
+
       res.status(200).json(formatSuccessResponse(
         { issues },
         'Board issues retrieved successfully'

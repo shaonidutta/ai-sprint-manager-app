@@ -312,11 +312,14 @@ class Issue {
         SELECT i.*,
                assignee.first_name as assignee_first_name, assignee.last_name as assignee_last_name,
                reporter.first_name as reporter_first_name, reporter.last_name as reporter_last_name,
-               s.name as sprint_name
+               s.name as sprint_name,
+               p.project_key
         FROM issues i
         LEFT JOIN users assignee ON i.assignee_id = assignee.id
         INNER JOIN users reporter ON i.reporter_id = reporter.id
         LEFT JOIN sprints s ON i.sprint_id = s.id
+        INNER JOIN boards b ON i.board_id = b.id
+        INNER JOIN projects p ON b.project_id = p.id
         ${whereClause}
         ORDER BY i.created_at DESC
         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
@@ -343,15 +346,16 @@ class Issue {
 
       const issues = rows.map(row => {
         const issue = new Issue(row);
+        issue.issue_key = `${row.project_key}-${row.id}`;
         issue.assignee = row.assignee_id ? {
           id: row.assignee_id,
-          firstName: row.assignee_first_name,
-          lastName: row.assignee_last_name
+          first_name: row.assignee_first_name,
+          last_name: row.assignee_last_name
         } : null;
         issue.reporter = {
           id: row.reporter_id,
-          firstName: row.reporter_first_name,
-          lastName: row.reporter_last_name
+          first_name: row.reporter_first_name,
+          last_name: row.reporter_last_name
         };
         issue.sprint = row.sprint_id ? {
           id: row.sprint_id,
