@@ -14,6 +14,12 @@ const SprintPlanningAI = ({ projectId, boardId, onPlanGenerated, className = '' 
     tasksList: ''
   });
 
+  // Feedback state for task management
+  const [rejectedTasks, setRejectedTasks] = useState([]);
+  const [editedTasks, setEditedTasks] = useState({});
+  const [taskFeedback, setTaskFeedback] = useState({});
+  const [showTaskFeedback, setShowTaskFeedback] = useState(false);
+
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
@@ -89,6 +95,78 @@ const SprintPlanningAI = ({ projectId, boardId, onPlanGenerated, className = '' 
     setSprintPlan(null);
     setShowResults(false);
     setEditableData(null);
+    setRejectedTasks([]);
+    setEditedTasks({});
+    setTaskFeedback({});
+    setShowTaskFeedback(false);
+  };
+
+  // Task feedback handlers
+  const handleTaskReject = (task) => {
+    setRejectedTasks(prev => [...prev, task]);
+    setTaskFeedback(prev => ({ ...prev, [task]: 'rejected' }));
+  };
+
+  const handleTaskAccept = (task) => {
+    setRejectedTasks(prev => prev.filter(t => t !== task));
+    setTaskFeedback(prev => ({ ...prev, [task]: 'accepted' }));
+  };
+
+  const handleTaskEdit = (originalTask, editedTask) => {
+    setEditedTasks(prev => ({ ...prev, [originalTask]: editedTask }));
+    setTaskFeedback(prev => ({ ...prev, [originalTask]: 'edited' }));
+  };
+
+  const handleRegeneratePlan = async () => {
+    if (!formData.tasksList) return;
+
+    setLoading(true);
+    setError(null);
+    setShowResults(false);
+
+    try {
+      const tasks = formData.tasksList
+        .split('\n')
+        .filter(task => task.trim())
+        .map((task, index) => {
+          const trimmedTask = task.trim();
+          const hasNumber = /^\d+\./.test(trimmedTask);
+          const taskText = hasNumber ? trimmedTask : `${index + 1}. ${trimmedTask}`;
+          return taskText;
+        });
+
+      const requestData = {
+        boardId,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        totalStoryPoints: formData.totalStoryPoints,
+        tasksList: tasks,
+        rejectedTasks: rejectedTasks.length > 0 ? rejectedTasks : undefined,
+        editedTasks: Object.keys(editedTasks).length > 0 ? editedTasks : undefined
+      };
+
+      const response = await aiService.generateSprintCreationPlan(projectId, requestData);
+      setSprintPlan(response.data);
+
+      if (response.data.sprint_plan && response.data.sprint_plan.error) {
+        const errorDetails = response.data.sprint_plan;
+        setError(`AI Response Error: ${errorDetails.error}. ${errorDetails.details || ''}`);
+        setEditableData(null);
+        setShowResults(true);
+      } else {
+        setEditableData(response.data.sprint_plan);
+        setShowResults(true);
+      }
+
+      if (onPlanGenerated) {
+        onPlanGenerated(response.data);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Failed to regenerate sprint plan');
+      console.error('Sprint planning regeneration error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreateSprint = async () => {
@@ -188,23 +266,88 @@ const SprintPlanningAI = ({ projectId, boardId, onPlanGenerated, className = '' 
             </div>
           </div>
 
-          {/* Total Story Points */}
+          {/* Total Story Points with Slider */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-800 mb-2">
               📊 Total Story Points *
+              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-bold">
+                {formData.totalStoryPoints}
+              </span>
             </label>
-            <input
-              type="number"
-              name="totalStoryPoints"
-              value={formData.totalStoryPoints}
-              onChange={handleInputChange}
-              min="1"
-              max="200"
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 ease-in-out hover:border-blue-300 hover:shadow-sm"
-              placeholder="40"
-              required
-            />
-            <p className="text-xs text-gray-500">Total story points available for this sprint</p>
+
+            {/* Slider */}
+            <div className="space-y-3">
+              <input
+                type="range"
+                name="totalStoryPoints"
+                value={formData.totalStoryPoints}
+                onChange={handleInputChange}
+                min="10"
+                max="200"
+                step="5"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                style={{
+                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((formData.totalStoryPoints - 10) / (200 - 10)) * 100}%, #e5e7eb ${((formData.totalStoryPoints - 10) / (200 - 10)) * 100}%, #e5e7eb 100%)`
+                }}
+              />
+
+              {/* Slider Labels */}
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>10</span>
+                <span>50</span>
+                <span>100</span>
+                <span>150</span>
+                <span>200</span>
+              </div>
+            </div>
+
+            {/* Number Input */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Or enter exact value:</span>
+              <input
+                type="number"
+                name="totalStoryPoints"
+                value={formData.totalStoryPoints}
+                onChange={handleInputChange}
+                min="1"
+                max="200"
+                className="w-24 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-in-out"
+                required
+              />
+            </div>
+
+            {/* Capacity Indicator */}
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Capacity Level:</span>
+                <span className={`font-semibold ${
+                  formData.totalStoryPoints <= 30 ? 'text-green-600' :
+                  formData.totalStoryPoints <= 60 ? 'text-yellow-600' :
+                  formData.totalStoryPoints <= 100 ? 'text-orange-600' :
+                  'text-red-600'
+                }`}>
+                  {formData.totalStoryPoints <= 30 ? 'Light' :
+                   formData.totalStoryPoints <= 60 ? 'Moderate' :
+                   formData.totalStoryPoints <= 100 ? 'Heavy' :
+                   'Very Heavy'}
+                </span>
+              </div>
+              <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    formData.totalStoryPoints <= 30 ? 'bg-green-500' :
+                    formData.totalStoryPoints <= 60 ? 'bg-yellow-500' :
+                    formData.totalStoryPoints <= 100 ? 'bg-orange-500' :
+                    'bg-red-500'
+                  }`}
+                  style={{ width: `${Math.min((formData.totalStoryPoints / 200) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              Recommended: 20-60 story points for a 2-week sprint (varies by team size and experience)
+            </p>
           </div>
 
           {/* Tasks List */}
@@ -216,11 +359,11 @@ const SprintPlanningAI = ({ projectId, boardId, onPlanGenerated, className = '' 
               name="tasksList"
               value={formData.tasksList}
               onChange={handleInputChange}
-              placeholder={`Paste all your tasks in numbered format. Example:
-1. Implement user authentication (Critical)
-2. Create dashboard UI components (High)
-3. Setup database migrations (Medium)
-4. Write unit tests (Low)
+              placeholder={`Paste all your tasks. Example:
+ Implement user authentication (Critical)
+ Create dashboard UI components (High)
+ Setup database migrations (Medium)
+ Write unit tests (Low)
 
 Note: Add priority in brackets (Critical/High/Medium/Low) or AI will decide automatically`}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 ease-in-out hover:border-blue-300 hover:shadow-sm resize-none"
@@ -289,6 +432,130 @@ Note: Add priority in brackets (Critical/High/Medium/Low) or AI will decide auto
           </button>
         </div>
       </form>
+
+      {/* Task Feedback Section */}
+      {formData.tasksList && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
+              <span>📝</span>
+              <span>Task Feedback & Regeneration</span>
+            </h3>
+            <button
+              onClick={() => setShowTaskFeedback(!showTaskFeedback)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-3 focus:ring-blue-500/20 transition-all duration-300 ease-in-out"
+            >
+              {showTaskFeedback ? 'Hide Tasks' : 'Review Tasks'}
+            </button>
+          </div>
+
+          {showTaskFeedback && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Review your tasks below. You can reject unwanted tasks or edit them before regenerating the plan.
+              </p>
+
+              <div className="space-y-3">
+                {formData.tasksList.split('\n').filter(task => task.trim()).map((task, index) => {
+                  const trimmedTask = task.trim();
+                  const taskStatus = taskFeedback[trimmedTask] || 'pending';
+                  const isRejected = taskStatus === 'rejected';
+                  const isEdited = taskStatus === 'edited';
+
+                  return (
+                    <div key={index} className={`border rounded-lg p-4 transition-all duration-300 ${
+                      isRejected ? 'bg-red-50 border-red-200' :
+                      isEdited ? 'bg-yellow-50 border-yellow-200' :
+                      'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-sm font-medium text-gray-700">
+                              {index + 1}. {trimmedTask}
+                            </span>
+                            {isRejected && (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                                Rejected
+                              </span>
+                            )}
+                            {isEdited && (
+                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                                Edited
+                              </span>
+                            )}
+                          </div>
+
+                          {isEdited && editedTasks[trimmedTask] && (
+                            <div className="mt-2 p-2 bg-white border border-yellow-300 rounded">
+                              <span className="text-sm text-gray-600">Edited version:</span>
+                              <p className="text-sm font-medium text-gray-800">{editedTasks[trimmedTask]}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center space-x-2 ml-4">
+                          {!isRejected && (
+                            <button
+                              onClick={() => handleTaskReject(trimmedTask)}
+                              className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors duration-200 text-sm"
+                            >
+                              ❌ Reject
+                            </button>
+                          )}
+
+                          {isRejected && (
+                            <button
+                              onClick={() => handleTaskAccept(trimmedTask)}
+                              className="px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors duration-200 text-sm"
+                            >
+                              ✅ Accept
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => {
+                              const newTask = prompt('Edit task:', trimmedTask);
+                              if (newTask && newTask !== trimmedTask) {
+                                handleTaskEdit(trimmedTask, newTask);
+                              }
+                            }}
+                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors duration-200 text-sm"
+                          >
+                            ✏️ Edit
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {(rejectedTasks.length > 0 || Object.keys(editedTasks).length > 0) && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-blue-900 mb-1">Ready to Regenerate</h4>
+                      <p className="text-sm text-blue-700">
+                        {rejectedTasks.length > 0 && `${rejectedTasks.length} task(s) rejected`}
+                        {rejectedTasks.length > 0 && Object.keys(editedTasks).length > 0 && ', '}
+                        {Object.keys(editedTasks).length > 0 && `${Object.keys(editedTasks).length} task(s) edited`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRegeneratePlan}
+                      disabled={loading}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-3 focus:ring-blue-500/20 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                      {loading ? 'Regenerating...' : '🔄 Regenerate Plan'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Error Details Display */}
       {showResults && sprintPlan && sprintPlan.sprint_plan && sprintPlan.sprint_plan.error && (

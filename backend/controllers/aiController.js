@@ -629,7 +629,7 @@ const generateRetrospectiveInsights = async (req, res, next) => {
 const generateSprintCreationPlan = async (req, res, next) => {
   try {
     const { projectId } = req.params;
-    const { boardId, startDate, endDate, totalStoryPoints, tasksList } = req.body;
+    const { boardId, startDate, endDate, totalStoryPoints, tasksList, rejectedTasks, editedTasks } = req.body;
     const userId = req.user.id;
 
     // Verify user has access to project
@@ -664,7 +664,9 @@ const generateSprintCreationPlan = async (req, res, next) => {
       tasksList,
       teamMembers,
       createdBy: userId,
-      reporterId: userId
+      reporterId: userId,
+      rejectedTasks,
+      editedTasks
     };
 
     const aiResponse = await aiService.generateSprintCreationPlan(projectId, userId, sprintCreationData);

@@ -167,7 +167,7 @@ class AIService {
   buildSprintCreationPrompt(sprintCreationData) {
     const {
       boardId, startDate, endDate, totalStoryPoints, tasksList,
-      teamMembers, createdBy, reporterId
+      teamMembers, createdBy, reporterId, rejectedTasks, editedTasks
     } = sprintCreationData;
 
     return `You are an expert Agile Project Manager and Sprint Planning specialist. Analyze the provided tasks and create a comprehensive sprint plan with intelligent task processing.
@@ -183,6 +183,9 @@ ${teamMembers.map(m => `- ${m.first_name} ${m.last_name} (ID: ${m.id}) - ${m.rol
 
 ## TASKS TO PROCESS
 ${tasksList.map((task, index) => `${index + 1}. ${task}`).join('\n')}
+
+## USER FEEDBACK (REGENERATION CONTEXT)
+${this.buildFeedbackSection(rejectedTasks, editedTasks)}
 
 ## CRITICAL INSTRUCTIONS
 
@@ -201,10 +204,7 @@ ${tasksList.map((task, index) => `${index + 1}. ${task}`).join('\n')}
 - "Create documentation (LOW)" → priority: "P4"
 
 **VALIDATION REQUIREMENT:**
-- You MUST include ALL input tasks in your output
-- Count input tasks: ${tasksList.length} tasks provided
-- Count output issues: MUST equal ${tasksList.length} issues
-- NO TASKS should be dropped or omitted
+${this.buildValidationRequirement(tasksList, rejectedTasks)}
 
 ### 2. TASK ENHANCEMENT
 For each task:
@@ -273,6 +273,61 @@ CRITICAL REQUIREMENTS:
 - Keep descriptions under 150 characters
 - Create meaningful titles
 - INCLUDE ALL INPUT TASKS - NO EXCEPTIONS`;
+  }
+
+  // Helper method to build feedback section for regeneration
+  buildFeedbackSection(rejectedTasks, editedTasks) {
+    let feedbackSection = '';
+
+    // Handle rejected tasks
+    if (rejectedTasks && Array.isArray(rejectedTasks) && rejectedTasks.length > 0) {
+      feedbackSection += `\n**REJECTED TASKS (DO NOT INCLUDE):**\n`;
+      feedbackSection += `The user has rejected the following tasks and they should NOT be included in the sprint:\n`;
+      rejectedTasks.forEach(task => {
+        feedbackSection += `- "${task}"\n`;
+      });
+      feedbackSection += `\n**IMPORTANT:** These rejected tasks must be completely excluded from the final sprint plan.\n`;
+    }
+
+    // Handle edited tasks
+    if (editedTasks && typeof editedTasks === 'object' && Object.keys(editedTasks).length > 0) {
+      feedbackSection += `\n**EDITED TASKS (USE UPDATED VERSIONS):**\n`;
+      feedbackSection += `The user has provided edited versions of tasks. Use the edited versions instead of the original:\n`;
+      for (const [original, edited] of Object.entries(editedTasks)) {
+        feedbackSection += `- Original: "${original}"\n`;
+        feedbackSection += `- Updated: "${edited}"\n\n`;
+      }
+      feedbackSection += `**IMPORTANT:** Always use the edited versions in the final sprint plan.\n`;
+    }
+
+    // If no feedback provided
+    if (!feedbackSection) {
+      feedbackSection = 'No user feedback provided. Process all tasks as originally specified.';
+    }
+
+    return feedbackSection;
+  }
+
+  // Helper method to build validation requirements based on feedback
+  buildValidationRequirement(tasksList, rejectedTasks) {
+    const totalTasks = tasksList.length;
+    const rejectedCount = rejectedTasks && Array.isArray(rejectedTasks) ? rejectedTasks.length : 0;
+    const expectedOutputCount = totalTasks - rejectedCount;
+
+    let validation = `- Total input tasks: ${totalTasks} tasks provided\n`;
+
+    if (rejectedCount > 0) {
+      validation += `- Rejected tasks to exclude: ${rejectedCount} tasks\n`;
+      validation += `- Expected output issues: MUST equal ${expectedOutputCount} issues (${totalTasks} - ${rejectedCount})\n`;
+      validation += `- EXCLUDE all rejected tasks from the final sprint plan\n`;
+      validation += `- INCLUDE all non-rejected tasks in your output\n`;
+    } else {
+      validation += `- Expected output issues: MUST equal ${expectedOutputCount} issues\n`;
+      validation += `- You MUST include ALL input tasks in your output\n`;
+      validation += `- NO TASKS should be dropped or omitted\n`;
+    }
+
+    return validation;
   }
 
   buildSprintPlanningPrompt(sprintData) {
