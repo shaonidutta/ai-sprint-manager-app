@@ -89,14 +89,6 @@ const TeamsPage = () => {
               <p className="text-gray-600 mt-1">Manage your team members and collaboration</p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
-              <Button
-                className="min-h-[44px] transition-all duration-150 hover:shadow-md"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add people
-              </Button>
             </div>
           </div>
         </div>

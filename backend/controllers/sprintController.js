@@ -307,54 +307,38 @@ class SprintController {
     }
   }
 
-  // GET /api/v1/sprints/:id/status - Get sprint scope status
+  // GET /api/v1/sprints/:id/status
   static async getSprintStatus(req, res) {
     try {
-      const { id: sprintId } = req.params;
+      const { id } = req.params;
       const userId = req.user.id;
 
-      // First, retrieve the sprint to ensure it exists and to get board_id for access check
-      const sprint = await Sprint.findById(sprintId); // Leverages existing access checks within findById if board context is needed
+      const sprint = await Sprint.findById(id);
 
-      // Check if user has access to this sprint's board (already part of Sprint.findById logic if it fetches board details)
-      // If Sprint.findById doesn't inherently check user access to the *board* itself, an explicit check might be needed here.
-      // Assuming Sprint.findById or an associated method handles board access for the user.
-      // If not, add: await Sprint.findByBoardId(sprint.board.id, userId, { limit: 1 }); to ensure user has board access.
+      // Check if user has access to this sprint
+      const boardId = sprint.board.id;
+      await Sprint.findByBoardId(boardId, userId, { limit: 1 });
 
-      // SELECT baseline_points, scope_threshold_pct, and scope_alerted from sprints
-      const [sprintDetails] = await database.query(
-        'SELECT baseline_points, scope_threshold_pct, scope_alerted FROM sprints WHERE id = ?',
-        [sprintId]
-      );
-
-      if (!sprintDetails) {
-        // This case should ideally be caught by Sprint.findById already
-        return res.status(404).json(formatErrorResponse({ code: 'NOT_FOUND', message: 'Sprint not found' }));
-      }
-
-      // SELECT COALESCE(SUM(story_points), 0) AS current_points from issues
-      const [issuePoints] = await database.query(
-        'SELECT COALESCE(SUM(story_points), 0) AS current_points FROM issues WHERE sprint_id = ?',
-        [sprintId]
-      );
+      // Get all issues in the sprint
+      const issues = await sprint.getIssues();
       
-      const responsePayload = {
-        baselinePoints: sprintDetails.baseline_points,
-        currentPoints: issuePoints.current_points,
-        thresholdPct: parseFloat(sprintDetails.scope_threshold_pct), // Ensure it's a number
-        scopeAlerted: Boolean(sprintDetails.scope_alerted) // Ensure it's a boolean
-      };
+      // Calculate baseline and current story points
+      const baselinePoints = sprint.capacity_story_points || 0;
+      const currentPoints = issues.reduce((total, issue) => total + (issue.story_points || 0), 0);
+      
+      // Calculate if scope creep alert should be shown (10% over baseline)
+      const thresholdPct = 0.1; // 10% threshold
+      const scopeAlerted = baselinePoints > 0 && 
+        ((currentPoints - baselinePoints) / baselinePoints) > thresholdPct;
 
-      res.status(200).json(formatSuccessResponse(
-        responsePayload,
-        'Sprint status retrieved successfully'
-      ));
-
+      res.status(200).json(formatSuccessResponse({
+        baselinePoints,
+        currentPoints,
+        thresholdPct,
+        scopeAlerted
+      }, 'Sprint status retrieved successfully'));
     } catch (error) {
-      logger.error(`Error getting sprint status for ID ${req.params.id}:`, error);
-      if (error.name === 'NotFoundError') {
-        return res.status(404).json(formatErrorResponse({ code: 'NOT_FOUND', message: 'Sprint not found' }));
-      }
+      logger.error('Error getting sprint status:', error);
       res.status(error.statusCode || 500).json(formatErrorResponse(error));
     }
   }

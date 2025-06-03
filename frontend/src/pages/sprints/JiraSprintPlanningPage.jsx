@@ -1002,7 +1002,6 @@ const JiraSprintPlanningPage = () => {
                       <div className="space-y-4">
                         {backlogIssues
                           .filter(issue => issue != null)
-                          .filter(issue => !issue.sprint_id) // Ensure no sprint-assigned issues show in backlog
                           .filter(issue =>
                             !searchTerm ||
                             issue.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||

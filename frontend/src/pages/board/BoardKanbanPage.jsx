@@ -383,22 +383,25 @@ const BoardKanbanPage = () => {
         : null;
       setActiveSprint(mostRecentActiveSprint);
 
-      if (activeSprints.length === 0) {
-        setIssues([]);
-        return;
-      }
-
       // Fetch all issues for the board
       const response = await api.issues.getAll(boardId);
       const allIssues = response.data.data.issues || [];
       
-      // Show issues from all active sprints
+      // Filter issues based on sprint status:
+      // - For active sprints: show issues from those sprints
+      // - For backlog: show issues with no sprint_id
       const activeSprintIds = activeSprints.map(sprint => sprint.id);
-      const sprintIssues = allIssues.filter(issue => 
-        activeSprintIds.includes(issue.sprint_id)
-      );
+      const displayedIssues = allIssues.filter(issue => {
+        if (activeSprints.length > 0) {
+          // If there are active sprints, show only issues from those sprints
+          return activeSprintIds.includes(issue.sprint_id);
+        } else {
+          // If no active sprints, show only backlog issues (no sprint_id)
+          return !issue.sprint_id;
+        }
+      });
       
-      setIssues(sprintIssues);
+      setIssues(displayedIssues);
     } catch (error) {
       console.error('Error fetching issues:', error);
       setError('Failed to load issues. Please try again.');
@@ -899,7 +902,7 @@ const BoardKanbanPage = () => {
           <div className="h-full p-6">
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Backlog</h2>
+                <h2 className="text-lg font-medium text-gray-900">All Issues</h2>
                 <p className="text-sm text-gray-600">All issues for this board</p>
               </div>
               
