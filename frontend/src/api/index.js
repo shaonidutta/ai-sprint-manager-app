@@ -69,6 +69,7 @@ export const api = {
     complete: (id, data) => axiosInstance.post(API_ENDPOINTS.SPRINTS.COMPLETE(id), data),
     addIssues: (id, data) => axiosInstance.post(API_ENDPOINTS.SPRINTS.ADD_ISSUES(id), data),
     removeIssue: (sprintId, issueId) => axiosInstance.delete(API_ENDPOINTS.SPRINTS.REMOVE_ISSUE(sprintId, issueId)),
+    getStatus: (id) => axiosInstance.get(API_ENDPOINTS.SPRINTS.STATUS(id)),
   },
 
   issues: {
