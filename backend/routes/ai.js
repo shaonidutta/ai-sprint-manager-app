@@ -108,7 +108,21 @@ const sprintCreationSchema = [
   body('tasksList.*')
     .isString()
     .isLength({ min: 1, max: 500 })
-    .withMessage('Each task must be a string between 1 and 500 characters')
+    .withMessage('Each task must be a string between 1 and 500 characters'),
+  // Optional feedback fields for regeneration
+  body('rejectedTasks')
+    .optional()
+    .isArray()
+    .withMessage('Rejected tasks must be an array'),
+  body('rejectedTasks.*')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Each rejected task must be a string between 1 and 500 characters'),
+  body('editedTasks')
+    .optional()
+    .isObject()
+    .withMessage('Edited tasks must be an object')
 ];
 
 const sprintPlanDataSchema = [
