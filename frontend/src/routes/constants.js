@@ -10,6 +10,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
   SETTINGS: '/settings',
+  TEAMS: '/teams',
 
   // Project Routes
   PROJECTS: '/projects',
@@ -58,6 +59,7 @@ export const PROTECTED_ROUTES = [
   ROUTES.DASHBOARD,
   ROUTES.PROFILE,
   ROUTES.SETTINGS,
+  ROUTES.TEAMS,
   ROUTES.PROJECTS,
   ROUTES.PROJECT_DETAILS,
   ROUTES.PROJECT_SETTINGS,
