@@ -56,12 +56,9 @@ const DroppableColumn = ({ column, issues, children, isOver, isDragging }) => {
 };
 
 // Draggable Issue Card Component
-const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false, activeSprint = null }) => {
+const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false }) => {
   // Check if issue is blocked
   const isBlocked = issue.blocked_reason && issue.blocked_reason.trim() !== '';
-
-  // Check if sprint is active - disable dragging if no active sprint
-  const isSprintInactive = !activeSprint || activeSprint.status !== 'Active';
 
   const {
     attributes,
@@ -72,7 +69,7 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false, activeSprin
     isDragging,
   } = useSortable({
     id: issue.id.toString(),
-    disabled: isBlocked || isSprintInactive // Disable dragging for blocked issues or inactive sprint
+    disabled: isBlocked // Only disable dragging for blocked issues
   });
 
   const style = {
@@ -158,8 +155,6 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false, activeSprin
       className={`group relative bg-white rounded-lg transition-all duration-150 ${
         isBlocked
           ? 'border-2 border-red-300 bg-red-50 opacity-80'
-          : isSprintInactive
-          ? 'border border-gray-300 bg-gray-50 opacity-70'
           : 'border border-gray-200 hover:shadow-md hover:border-blue-300'
       } ${
         isDragging ? 'shadow-lg border-blue-400 transform rotate-1' : ''
@@ -169,7 +164,7 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false, activeSprin
       <div
         {...listeners}
         className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
-          isBlocked || isSprintInactive
+          isBlocked
             ? 'cursor-not-allowed text-gray-300'
             : 'cursor-grab active:cursor-grabbing text-gray-400'
         }`}
@@ -177,10 +172,6 @@ const DraggableIssueCard = ({ issue, onClick, isDragOverlay = false, activeSprin
         {isBlocked ? (
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-          </svg>
-        ) : isSprintInactive ? (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
         ) : (
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,12 +370,38 @@ const BoardKanbanPage = () => {
 
     try {
       setLoading(true);
+      setError('');
+      
+      // Get all sprints and find all active ones
+      const sprintResponse = await api.sprints.getAll(boardId);
+      const sprints = sprintResponse.data.data.sprints || [];
+      const activeSprints = sprints.filter(sprint => sprint.status === 'Active');
+      
+      // Set the most recently created active sprint as the active sprint
+      const mostRecentActiveSprint = activeSprints.length > 0 
+        ? activeSprints.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+        : null;
+      setActiveSprint(mostRecentActiveSprint);
+
+      if (activeSprints.length === 0) {
+        setIssues([]);
+        return;
+      }
+
+      // Fetch all issues for the board
       const response = await api.issues.getAll(boardId);
-      setIssues(response.data.data.issues || []);
-      setError(null);
-    } catch (err) {
+      const allIssues = response.data.data.issues || [];
+      
+      // Show issues from all active sprints
+      const activeSprintIds = activeSprints.map(sprint => sprint.id);
+      const sprintIssues = allIssues.filter(issue => 
+        activeSprintIds.includes(issue.sprint_id)
+      );
+      
+      setIssues(sprintIssues);
+    } catch (error) {
+      console.error('Error fetching issues:', error);
       setError('Failed to load issues. Please try again.');
-      setIssues([]);
     } finally {
       setLoading(false);
     }
@@ -462,8 +479,6 @@ const BoardKanbanPage = () => {
       navigate('/board', { replace: true });
     }
   };
-
-
 
   const getIssuesByStatus = (status) => {
     return issues.filter(issue => issue && issue.status === status);
@@ -566,8 +581,6 @@ const BoardKanbanPage = () => {
       setIsUpdatingIssue(false);
     }
   };
-
-
 
   // Handle issue card click
   const handleIssueClick = (issue) => {
@@ -676,7 +689,6 @@ const BoardKanbanPage = () => {
                 ))}
               </select>
             </div>
-
 
           </div>
 
@@ -855,7 +867,6 @@ const BoardKanbanPage = () => {
                                   key={issue.id}
                                   issue={issue}
                                   onClick={handleIssueClick}
-                                  activeSprint={activeSprint}
                                 />
                               ))
                             )}
@@ -876,7 +887,6 @@ const BoardKanbanPage = () => {
                         issue={draggedIssue}
                         onClick={() => {}}
                         isDragOverlay={true}
-                        activeSprint={activeSprint}
                       />
                     ) : null;
                   })()

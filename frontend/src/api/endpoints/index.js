@@ -27,6 +27,14 @@ export const API_ENDPOINTS = {
       ADD: (id) => `/projects/${id}/team`,
       UPDATE: (id, userId) => `/projects/${id}/team/${userId}`,
       REMOVE: (id, userId) => `/projects/${id}/team/${userId}`
+    },
+    SKILLS: {
+      LIST: (id) => `/projects/${id}/skills`,
+      STATS: (id) => `/projects/${id}/skills/stats`,
+      USER_SKILLS: (id, userId) => `/projects/${id}/users/${userId}/skills`,
+      ADD: (id) => `/projects/${id}/skills`,
+      UPDATE: (skillId) => `/skills/${skillId}`,
+      DELETE: (skillId) => `/skills/${skillId}`
     }
   },
   BOARDS: {

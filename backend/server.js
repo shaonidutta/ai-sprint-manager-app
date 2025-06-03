@@ -165,6 +165,7 @@ const activityRoutes = require('./routes/activities');
 const kanbanRoutes = require('./routes/kanban');
 const aiRoutes = require('./routes/ai');
 const dashboardRoutes = require('./routes/dashboard');
+const skillsRoutes = require('./routes/skills');
 
 
 // API routes
@@ -177,6 +178,7 @@ app.use('/api/v1/activities', activityRoutes);
 app.use('/api/v1/kanban', kanbanRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1', skillsRoutes);
 
 
 // API root endpoint

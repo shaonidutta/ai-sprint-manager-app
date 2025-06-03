@@ -17,7 +17,8 @@ const CreateIssueForm = ({
     assignee_id: '',
     story_points: '',
     labels: '',
-    due_date: ''
+    due_date: '',
+    status: 'Backlog'
   });
 
   const [errors, setErrors] = useState({});

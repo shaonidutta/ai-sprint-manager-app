@@ -103,18 +103,6 @@ class Sprint {
         throw new ValidationError('Insufficient permissions to create sprint');
       }
 
-      // Check if there's already an active sprint for this board
-      if (sprint.status === 'Active') {
-        const activeSprintCheck = await database.query(
-          'SELECT id FROM sprints WHERE board_id = ? AND status = "Active"',
-          [sprint.board_id]
-        );
-
-        if (activeSprintCheck.length > 0) {
-          throw new ValidationError('There is already an active sprint for this board');
-        }
-      }
-
       const query = `
         INSERT INTO sprints (board_id, name, goal, start_date, end_date, capacity_story_points, status, created_by, baseline_points, scope_threshold_pct, scope_alerted)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -350,16 +338,6 @@ class Sprint {
 
   async start(userId) {
     try {
-      // Check if there's already an active sprint for this board
-      const activeSprintCheck = await database.query(
-        'SELECT id FROM sprints WHERE board_id = ? AND status = "Active" AND id != ?',
-        [this.board_id, this.id]
-      );
-
-      if (activeSprintCheck.length > 0) {
-        throw new ValidationError('There is already an active sprint for this board');
-      }
-
       this.status = 'Active';
       if (!this.start_date) {
         // Ensure YYYY-MM-DD format for DATE SQL type

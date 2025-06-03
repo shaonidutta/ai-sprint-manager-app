@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, Button, Input } from '../../components/common';
 import { api } from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import SkillsManagement from '../../components/teams/SkillsManagement';
 
 const ProjectTeamPage = () => {
   const { id } = useParams();
@@ -281,6 +282,16 @@ const ProjectTeamPage = () => {
           </div>
         )}
       </Card>
+
+      {/* Skills Management */}
+      <SkillsManagement
+        projectId={id}
+        teamMembers={teamMembers}
+        currentUser={{
+          id: user?.id,
+          role: currentUserRole
+        }}
+      />
 
       {/* Invite Modal */}
       {showInviteModal && (

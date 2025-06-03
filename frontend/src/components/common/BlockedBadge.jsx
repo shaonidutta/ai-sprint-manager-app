@@ -23,15 +23,18 @@ const BlockedBadge = ({
   return (
     <div 
       className={`
-        inline-flex items-center space-x-1 bg-red-100 text-red-800 border border-red-200 rounded-full font-medium
+        group relative inline-flex items-center space-x-1 
+        bg-red-100 text-red-800 border border-red-300 
+        rounded-full font-medium shadow-sm
+        hover:bg-red-200 hover:border-red-400 transition-all duration-150
+        cursor-help
         ${sizeClasses[size]}
         ${className}
       `}
-      title={`Blocked: ${blocked_reason}`}
     >
       {showIcon && (
         <svg 
-          className={`${iconSizes[size]} text-red-600`} 
+          className={`${iconSizes[size]} text-red-600 animate-pulse`} 
           fill="currentColor" 
           viewBox="0 0 20 20"
         >
@@ -43,6 +46,13 @@ const BlockedBadge = ({
         </svg>
       )}
       <span>Blocked</span>
+
+      {/* Tooltip */}
+      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-red-800 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50">
+        <div className="font-medium mb-1">Blocker Reason:</div>
+        <p className="max-w-xs break-words">{blocked_reason}</p>
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 border-4 border-transparent border-t-red-800"></div>
+      </div>
     </div>
   );
 };
