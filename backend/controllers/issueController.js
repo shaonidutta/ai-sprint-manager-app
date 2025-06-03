@@ -3,6 +3,7 @@ const Comment = require('../models/Comment');
 const TimeLog = require('../models/TimeLog');
 const logger = require('../config/logger');
 const { formatSuccessResponse, formatErrorResponse } = require('../utils/errors');
+const { recomputeSprintScope } = require('../utils/sprintUtils'); // Added for scope creep calculation
 
 class IssueController {
   // GET /api/v1/boards/:boardId/issues
@@ -127,6 +128,16 @@ class IssueController {
 
       const issue = await Issue.create(issueData);
 
+      // After creating an issue, recompute scope if it's assigned to a sprint
+      if (issue.sprint_id) {
+        try {
+          await recomputeSprintScope(issue.sprint_id);
+        } catch (recomputeError) {
+          logger.error(`Error recomputing sprint scope after creating issue ${issue.id} for sprint ${issue.sprint_id}:`, recomputeError);
+          // Do not let this error block the main response
+        }
+      }
+
       res.status(201).json(formatSuccessResponse({
         message: 'Issue created successfully',
         data: { issue }
@@ -167,11 +178,14 @@ class IssueController {
       });
 
       const issue = await Issue.findById(id);
+      const oldSprintId = issue.sprint_id;
+      const oldStoryPoints = issue.story_points;
 
       console.log('🔍 ISSUE BEFORE UPDATE:', {
         id: issue.id,
         title: issue.title,
-        current_sprint_id: issue.sprint_id
+        current_sprint_id: oldSprintId,
+        current_story_points: oldStoryPoints
       });
 
       // Check if user has access to this issue
@@ -184,39 +198,76 @@ class IssueController {
       if (issueType !== undefined) issue.issue_type = issueType;
       if (status !== undefined) issue.status = status;
       if (priority !== undefined) issue.priority = priority;
+      // Allow unassigning by passing null
       if (assigneeId !== undefined) issue.assignee_id = assigneeId;
       if (storyPoints !== undefined) issue.story_points = storyPoints;
       if (originalEstimate !== undefined) issue.original_estimate = originalEstimate;
       if (timeRemaining !== undefined) issue.time_remaining = timeRemaining;
-
-      // Handle both camelCase and snake_case for sprint_id
-      if (sprintId !== undefined) {
-        console.log('🔄 Setting sprint_id from sprintId:', sprintId);
-        issue.sprint_id = sprintId;
-      } else if (sprint_id !== undefined) {
-        console.log('🔄 Setting sprint_id from sprint_id:', sprint_id);
-        issue.sprint_id = sprint_id;
+      
+      // Handle sprint_id update (allow unassigning by passing null)
+      let newSprintIdFromRequest;
+      if (sprintId !== undefined) { // typically from frontend JSON
+        newSprintIdFromRequest = sprintId;
+      } else if (sprint_id !== undefined) { // typically from form-data or other sources
+        newSprintIdFromRequest = sprint_id;
       }
+
+      if (newSprintIdFromRequest !== undefined) {
+         // Allow setting sprint_id to null to remove from sprint
+        issue.sprint_id = newSprintIdFromRequest === null ? null : parseInt(newSprintIdFromRequest, 10);
+      }
+
 
       if (blockedReason !== undefined) issue.blocked_reason = blockedReason;
 
-      console.log('🔍 ISSUE AFTER PROPERTY UPDATE:', {
+      console.log('🔍 ISSUE AFTER PROPERTY UPDATE (before save):', {
         id: issue.id,
         title: issue.title,
-        new_sprint_id: issue.sprint_id
+        new_sprint_id: issue.sprint_id,
+        new_story_points: issue.story_points
       });
 
-      await issue.save();
+      await issue.save(); // Save changes to the issue first
+
+      const newSprintIdActual = issue.sprint_id;
+      const newStoryPointsActual = issue.story_points;
 
       console.log('🔍 ISSUE AFTER SAVE:', {
         id: issue.id,
         title: issue.title,
-        final_sprint_id: issue.sprint_id
+        final_sprint_id: newSprintIdActual,
+        final_story_points: newStoryPointsActual
       });
+      
+      // Recompute sprint scope
+      // Use a Set to avoid duplicate calls if old and new sprint IDs are the same (though logic below handles it)
+      const sprintsToRecompute = new Set();
+
+      if (oldSprintId !== newSprintIdActual) {
+        if (oldSprintId) {
+          sprintsToRecompute.add(oldSprintId);
+        }
+        if (newSprintIdActual) {
+          sprintsToRecompute.add(newSprintIdActual);
+        }
+      } else if (oldStoryPoints !== newStoryPointsActual) { // Sprint is the same, but points changed
+        if (newSprintIdActual) { // Only recompute if it's in a sprint
+          sprintsToRecompute.add(newSprintIdActual);
+        }
+      }
+
+      for (const sprintToUpdate of sprintsToRecompute) {
+        try {
+          await recomputeSprintScope(sprintToUpdate);
+        } catch (recomputeError) {
+          logger.error(`Error recomputing sprint scope for sprint ${sprintToUpdate} after updating issue ${issue.id}:`, recomputeError);
+          // Do not let this error block the main response
+        }
+      }
 
       res.status(200).json(formatSuccessResponse({
         message: 'Issue updated successfully',
-        data: { issue }
+        data: { issue } // issue object is already updated
       }));
     } catch (error) {
       logger.error('Error updating issue:', error);

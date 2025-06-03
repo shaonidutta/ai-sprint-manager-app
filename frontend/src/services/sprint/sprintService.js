@@ -96,6 +96,14 @@ export const sprintService = {
     return response.data;
   },
 
+  // Get sprint status (for scope creep)
+  getStatus: async (sprintId) => {
+    // Ensure API_ENDPOINTS.SPRINTS.STATUS(sprintId) is defined
+    // e.g., in endpoints/index.js: STATUS: (sprintId) => `/sprints/${sprintId}/status`,
+    const response = await api.get(API_ENDPOINTS.SPRINTS.STATUS(sprintId));
+    return response.data;
+  },
+
   // Add issues to sprint
   addIssues: async (sprintId, issueIds) => {
     const response = await api.post(API_ENDPOINTS.SPRINTS.ADD_ISSUES(sprintId), { issueIds });

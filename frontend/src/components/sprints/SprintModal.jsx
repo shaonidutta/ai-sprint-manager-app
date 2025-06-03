@@ -7,8 +7,10 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
     name: '',
     goal: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
+    scope_threshold_pct: 0.10 // Default for new sprints
   });
+  const [thresholdPctUI, setThresholdPctUI] = useState(10); // Integer percentage for UI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mode, setMode] = useState('create'); // 'create', 'start', 'complete', 'plan'
@@ -25,16 +27,20 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
           name: activeSprint.name || '',
           goal: activeSprint.goal || '',
           start_date: activeSprint.start_date ? activeSprint.start_date.split('T')[0] : '',
-          end_date: activeSprint.end_date ? activeSprint.end_date.split('T')[0] : ''
+          end_date: activeSprint.end_date ? activeSprint.end_date.split('T')[0] : '',
+          scope_threshold_pct: activeSprint.scope_threshold_pct !== undefined ? activeSprint.scope_threshold_pct : 0.10
         });
+        setThresholdPctUI(activeSprint.scope_threshold_pct !== undefined ? parseFloat(activeSprint.scope_threshold_pct) * 100 : 10);
       } else {
         setMode('create');
         setFormData({
           name: '',
           goal: '',
           start_date: '',
-          end_date: ''
+          end_date: '',
+          scope_threshold_pct: 0.10 // Default for new
         });
+        setThresholdPctUI(10); // Default for new
       }
       setError(null);
 
@@ -70,10 +76,27 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    if (name === 'thresholdPctUI') {
+      const newThresholdUI = parseInt(value, 10);
+      if (!isNaN(newThresholdUI) && newThresholdUI >= 0 && newThresholdUI <= 100) {
+        setThresholdPctUI(newThresholdUI);
+        setFormData(prev => ({
+          ...prev,
+          scope_threshold_pct: newThresholdUI / 100
+        }));
+      } else if (value === '') { // Allow clearing the input
+        setThresholdPctUI('');
+         setFormData(prev => ({
+          ...prev,
+          scope_threshold_pct: 0 // Or some other default if empty means 0
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleIssueSelect = (issue) => {
@@ -137,7 +160,8 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
         name: formData.name.trim(),
         goal: formData.goal.trim() || null,
         start_date: formData.start_date || null,
-        end_date: formData.end_date || null
+        end_date: formData.end_date || null,
+        scope_threshold_pct: parseFloat(formData.scope_threshold_pct) // Ensure it's a number
       });
 
       if (response.data.success) {
@@ -159,10 +183,17 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
       setLoading(true);
       setError(null);
       
-      const response = await api.sprints.start(activeSprint.id, {
-        start_date: formData.start_date,
-        end_date: formData.end_date
-      });
+      // When starting, we might also want to update details if they were changed in "manage" mode
+      // The backend start endpoint currently doesn't take these, but if it did:
+      // await api.sprints.update(activeSprint.id, {
+      //   name: formData.name,
+      //   goal: formData.goal,
+      //   start_date: formData.start_date,
+      //   end_date: formData.end_date,
+      //   scope_threshold_pct: parseFloat(formData.scope_threshold_pct)
+      // });
+
+      const response = await api.sprints.start(activeSprint.id); // start endpoint doesn't take payload per plan
 
       if (response.data.success) {
         onSprintUpdated();
@@ -171,6 +202,42 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
     } catch (err) {
       console.error('Failed to start sprint:', err);
       setError(err.response?.data?.message || 'Failed to start sprint. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Handler for updating sprint details (used in manage mode)
+  const handleUpdateSprintDetails = async (e) => {
+    e.preventDefault();
+    if (!activeSprint || !formData.name.trim()) {
+      setError('Sprint name is required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const payload = {
+        name: formData.name.trim(),
+        goal: formData.goal.trim() || null,
+        start_date: formData.start_date || null,
+        end_date: formData.end_date || null,
+        scope_threshold_pct: parseFloat(formData.scope_threshold_pct)
+      };
+      
+      const response = await api.sprints.update(activeSprint.id, payload);
+
+      if (response.data.success) {
+        onSprintUpdated();
+        // Potentially keep modal open or close based on UX preference
+        // onClose();
+        alert('Sprint details updated!'); // Or use a toast
+      }
+    } catch (err) {
+      console.error('Failed to update sprint details:', err);
+      setError(err.response?.data?.message || 'Failed to update sprint details.');
     } finally {
       setLoading(false);
     }
@@ -204,8 +271,10 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
         name: '',
         goal: '',
         start_date: '',
-        end_date: ''
+        end_date: '',
+        scope_threshold_pct: 0.10
       });
+      setThresholdPctUI(10);
       setError(null);
     }
   };
@@ -300,6 +369,23 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
                 </div>
               </div>
 
+              <div>
+                <label htmlFor="thresholdPctUI" className="block text-sm font-medium text-neutral-700 mb-2">
+                  Scope-Creep Threshold (%)
+                </label>
+                <Input
+                  id="thresholdPctUI"
+                  name="thresholdPctUI"
+                  type="number"
+                  value={thresholdPctUI}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                  placeholder="e.g., 10 for 10%"
+                  disabled={loading}
+                />
+              </div>
+
               <div className="flex justify-end space-x-3 pt-4 border-t">
                 <Button
                   type="button"
@@ -318,44 +404,68 @@ const SprintModal = ({ isOpen, onClose, projectId, activeSprint, onSprintUpdated
               </div>
             </form>
           ) : (
-            <div className="space-y-4">
-              <div className="p-4 bg-neutral-50 rounded-lg">
-                <h3 className="font-medium text-neutral-900 mb-2">{activeSprint?.name}</h3>
-                {activeSprint?.goal && (
-                  <p className="text-sm text-neutral-600 mb-2">{activeSprint.goal}</p>
-                )}
-                <div className="text-sm text-neutral-500">
-                  Status: <span className="font-medium capitalize">{activeSprint?.status}</span>
+            <form onSubmit={handleUpdateSprintDetails} className="space-y-4">
+              {/* Fields for managing an existing sprint - name, goal, dates, threshold */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Sprint Name *</label>
+                <Input name="name" value={formData.name} onChange={handleChange} required disabled={loading || activeSprint?.status !== 'Planning'} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Sprint Goal</label>
+                <TextArea name="goal" value={formData.goal} onChange={handleChange} rows={2} disabled={loading || activeSprint?.status !== 'Planning'} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Start Date</label>
+                  <Input name="start_date" type="date" value={formData.start_date} onChange={handleChange} disabled={loading || activeSprint?.status !== 'Planning'} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">End Date</label>
+                  <Input name="end_date" type="date" value={formData.end_date} onChange={handleChange} disabled={loading || activeSprint?.status !== 'Planning'} />
                 </div>
               </div>
-
-              <div className="flex justify-end space-x-3 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClose}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                {activeSprint?.status === 'active' ? (
-                  <Button
-                    onClick={handleCompleteSprint}
-                    disabled={loading}
-                    variant="danger"
-                  >
-                    {loading ? 'Completing...' : 'Complete Sprint'}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleStartSprint}
-                    disabled={loading}
-                  >
-                    {loading ? 'Starting...' : 'Start Sprint'}
-                  </Button>
-                )}
+               <div>
+                <label htmlFor="thresholdPctUI" className="block text-sm font-medium text-neutral-700 mb-2">
+                  Scope-Creep Threshold (%)
+                </label>
+                <Input
+                  id="thresholdPctUI"
+                  name="thresholdPctUI"
+                  type="number"
+                  value={thresholdPctUI}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                  placeholder="e.g., 10 for 10%"
+                  disabled={loading || activeSprint?.status !== 'Planning'}
+                />
               </div>
-            </div>
+
+              <div className="flex justify-between items-center pt-4 border-t">
+                <div>
+                  {activeSprint?.status === 'Planning' && (
+                     <Button type="submit" disabled={loading || !formData.name?.trim()}>
+                       {loading ? 'Saving...' : 'Save Changes'}
+                     </Button>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
+                    Close
+                  </Button>
+                  {activeSprint?.status === 'Active' && (
+                    <Button onClick={handleCompleteSprint} disabled={loading} variant="danger">
+                      {loading ? 'Completing...' : 'Complete Sprint'}
+                    </Button>
+                  )}
+                  {activeSprint?.status === 'Planning' && (
+                    <Button onClick={handleStartSprint} disabled={loading}>
+                      {loading ? 'Starting...' : 'Start Sprint'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </form>
           )}
         </div>
       </Card>
