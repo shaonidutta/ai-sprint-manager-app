@@ -186,11 +186,25 @@ ${tasksList.map((task, index) => `${index + 1}. ${task}`).join('\n')}
 
 ## CRITICAL INSTRUCTIONS
 
-### 1. PRIORITY MAPPING (MUST FOLLOW EXACTLY)
-- Tasks with "Critical" or "High" → P1 (Highest Priority)
-- Tasks with "Medium" → P2 (Medium Priority)
-- Tasks with "Low" → P4 (Lowest Priority)
-- No priority specified → Assign P1/P2/P3/P4 based on business impact and task nature.
+### 1. PRIORITY MAPPING (MUST FOLLOW EXACTLY - CASE INSENSITIVE)
+**MANDATORY PRIORITY ASSIGNMENTS:**
+- Tasks with "Critical" or "critical" → P1 (Critical Priority)
+- Tasks with "High" or "high" → P2 (High Priority)
+- Tasks with "Medium" or "medium" → P3 (Medium Priority)
+- Tasks with "Low" or "low" → P4 (Low Priority) ⚠️ IMPORTANT: LOW PRIORITY TASKS MUST BE P4
+- No priority specified → Assign P1/P2/P3/P4 based on business impact and task nature
+
+**EXAMPLES OF CORRECT MAPPING:**
+- "Write unit tests (low)" → priority: "P4"
+- "Add email notifications (Low)" → priority: "P4"
+- "Setup CI/CD pipeline (low)" → priority: "P4"
+- "Create documentation (LOW)" → priority: "P4"
+
+**VALIDATION REQUIREMENT:**
+- You MUST include ALL input tasks in your output
+- Count input tasks: ${tasksList.length} tasks provided
+- Count output issues: MUST equal ${tasksList.length} issues
+- NO TASKS should be dropped or omitted
 
 ### 2. TASK ENHANCEMENT
 For each task:
@@ -203,11 +217,17 @@ For each task:
 - Distribute total ${totalStoryPoints} points based on complexity
 - Consider dependencies, technical difficulty, scope
 - Use 4-6 hours per story point for estimates
+- Low priority (P4) tasks typically get 1-3 story points
 
 ### 4. TEAM ASSIGNMENT
 - Match tasks to team member expertise and roles
 - Distribute workload evenly
 - Consider specializations (Admin, Developer, Project Manager)
+
+### 5. PRIORITY DISTRIBUTION REQUIREMENTS
+- MUST include P4 priority issues if any "low" priority tasks are in input
+- Aim for realistic priority distribution across P1, P2, P3, P4
+- Do NOT avoid P4 assignments - they are valid and required
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON (no markdown, no code blocks, no explanations):
@@ -237,11 +257,22 @@ Return ONLY valid JSON (no markdown, no code blocks, no explanations):
   ]
 }
 
-CRITICAL:
-- Return ONLY JSON (no markdown blocks)
-- Use ONLY P1, P2, P3 priorities
+## FINAL VALIDATION CHECKLIST:
+Before returning your response, verify:
+✅ All ${tasksList.length} input tasks are included as issues
+✅ Tasks marked with "low" or "Low" have priority "P4"
+✅ Tasks marked with "medium" or "Medium" have priority "P3"
+✅ Tasks marked with "high" or "High" have priority "P2"
+✅ Tasks marked with "critical" or "Critical" have priority "P1"
+✅ JSON is valid and complete
+✅ No tasks were dropped or omitted
+
+CRITICAL REQUIREMENTS:
+- Return ONLY JSON (no markdown blocks, no explanations)
+- Use P1, P2, P3, P4 priorities as specified in mapping rules
 - Keep descriptions under 150 characters
-- Create meaningful titles`;
+- Create meaningful titles
+- INCLUDE ALL INPUT TASKS - NO EXCEPTIONS`;
   }
 
   buildSprintPlanningPrompt(sprintData) {
@@ -600,9 +631,9 @@ Format as JSON:
 
       const prompt = this.buildSprintCreationPrompt(sprintCreationData);
 
-      // Use higher token limit for sprint creation to accommodate full JSON response
+      // Use appropriate token limit for sprint creation (within gpt-3.5-turbo limits)
       const response = await this.generateCompletion(prompt, {
-        maxTokens: 6000, // Increased for detailed descriptions and better model
+        maxTokens: 4000, // Within gpt-3.5-turbo's 4096 token limit
         temperature: 0.1  // Very low temperature for consistent, structured output
       });
 
@@ -690,8 +721,8 @@ Format as JSON:
           throw new Error(`Invalid issue_type '${issue.issue_type}' in issue ${index + 1}`);
         }
 
-        if (!['P1', 'P2', 'P3'].includes(issue.priority)) {
-          throw new Error(`Invalid priority '${issue.priority}' in issue ${index + 1}. Only P1, P2, P3 are allowed.`);
+        if (!['P1', 'P2', 'P3', 'P4'].includes(issue.priority)) {
+          throw new Error(`Invalid priority '${issue.priority}' in issue ${index + 1}. Only P1, P2, P3, P4 are allowed.`);
         }
 
         // Validate story points
