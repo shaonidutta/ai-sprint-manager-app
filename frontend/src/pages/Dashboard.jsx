@@ -301,7 +301,7 @@ const Dashboard = () => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="animate-pulse">
+                <div key={`project-skeleton-${i}`} className="animate-pulse">
                   <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
@@ -312,15 +312,15 @@ const Dashboard = () => {
                     </div>
                     <div className="h-3 bg-gray-300 rounded mb-4"></div>
                     <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div className="text-center">
+                      <div key={`stat-${i}-1`} className="text-center">
                         <div className="h-6 bg-gray-300 rounded mb-1"></div>
                         <div className="h-3 bg-gray-300 rounded"></div>
                       </div>
-                      <div className="text-center">
+                      <div key={`stat-${i}-2`} className="text-center">
                         <div className="h-6 bg-gray-300 rounded mb-1"></div>
                         <div className="h-3 bg-gray-300 rounded"></div>
                       </div>
-                      <div className="text-center">
+                      <div key={`stat-${i}-3`} className="text-center">
                         <div className="h-6 bg-gray-300 rounded mb-1"></div>
                         <div className="h-3 bg-gray-300 rounded"></div>
                       </div>
@@ -369,7 +369,7 @@ const Dashboard = () => {
           <div className="space-y-4">
             {loading ? (
               [...Array(5)].map((_, i) => (
-                <div key={i} className="animate-pulse flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                <div key={`activity-skeleton-${i}`} className="animate-pulse flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                   <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
                   <div className="flex-1">
                     <div className="h-4 bg-gray-300 rounded mb-2"></div>

@@ -31,7 +31,6 @@ export const useDashboard = () => {
         pendingTasks: statsData.pendingTasks || 0
       });
     } catch (err) {
-      console.error('Failed to fetch dashboard stats:', err);
       // Use fallback data if API fails
       setStats({
         totalProjects: 0,
@@ -74,7 +73,6 @@ export const useDashboard = () => {
                 team_members: teamMembers.slice(0, 3) // Only first 3 for display
               };
             } catch (error) {
-              console.warn(`Failed to fetch stats for project ${project.id}:`, error);
               // Return project with default values if stats fail
               return {
                 ...project,
@@ -97,7 +95,6 @@ export const useDashboard = () => {
         setProjects([]);
       }
     } catch (err) {
-      console.error('Failed to fetch projects:', err);
       setProjects([]);
       // Don't throw error for projects - show empty state instead
     }
@@ -110,7 +107,6 @@ export const useDashboard = () => {
       const activityData = response.data?.data || response.data || [];
       setRecentActivity(Array.isArray(activityData) ? activityData : []);
     } catch (err) {
-      console.error('Failed to fetch recent activity:', err);
       setRecentActivity([]);
       // Don't throw error for activity - show empty state instead
     }
@@ -132,7 +128,6 @@ export const useDashboard = () => {
     } catch (err) {
       // This should rarely happen since individual functions handle errors
       setError('Failed to load dashboard data. Please try again.');
-      console.error('Dashboard data loading error:', err);
     } finally {
       setLoading(false);
     }

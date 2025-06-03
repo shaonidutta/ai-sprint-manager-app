@@ -61,9 +61,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
       setErrors({});
       onClose();
     } catch (error) {
-      // Only log error to console, don't show in UI
-      console.error('Failed to create project:', error);
-      // Don't set UI errors as requested
+      // Error will be handled by global toast via error interceptor
     }
   };
 
