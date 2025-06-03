@@ -20,6 +20,7 @@ const Input = ({
   fullWidth = false,
   startIcon,
   endIcon,
+  inputClassName = '',
 }) => {
   const baseClasses = `
     relative block w-full rounded-md border-gray-300 shadow-sm
@@ -80,6 +81,7 @@ const Input = ({
             ${variantClasses[variant]}
             ${startIcon ? 'pl-10' : ''}
             ${endIcon ? 'pr-10' : ''}
+            ${inputClassName}
           `}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${id}-error` : undefined}
@@ -123,6 +125,7 @@ Input.propTypes = {
   fullWidth: PropTypes.bool,
   startIcon: PropTypes.node,
   endIcon: PropTypes.node,
+  inputClassName: PropTypes.string,
 };
 
 export default Input; 

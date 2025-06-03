@@ -81,7 +81,8 @@ const Login = () => {
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pr-10"
+                className="w-full"
+                inputClassName="pr-10"
                 fullWidth
               />
               <button
