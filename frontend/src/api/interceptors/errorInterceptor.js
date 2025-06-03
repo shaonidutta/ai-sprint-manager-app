@@ -1,41 +1,55 @@
+// Global toast instance - will be set by the app
+let globalToast = null;
+
+export const setGlobalToast = (toast) => {
+  globalToast = toast;
+};
+
 export const setupErrorInterceptor = (axiosInstance) => {
   axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
-      // Log errors in development
-      if (import.meta.env.DEV) {
-        console.error('API Error:', {
-          status: error.response?.status,
-          message: error.response?.data?.message || error.message,
-          url: error.config?.url,
-          method: error.config?.method,
-        });
-      }
-
       // Handle specific error cases
+      let errorMessage;
+      let shouldShowToast = true;
+
       switch (error.response?.status) {
         case 400:
-          error.message = error.response.data.message || 'Invalid request';
+          errorMessage = error.response.data.message || 'Invalid request';
+          break;
+        case 401:
+          // Don't show toast for auth errors as they're handled by redirect
+          shouldShowToast = false;
+          errorMessage = 'Authentication required';
           break;
         case 403:
-          error.message = 'You do not have permission to perform this action';
+          errorMessage = 'You do not have permission to perform this action';
           break;
         case 404:
-          error.message = 'The requested resource was not found';
+          errorMessage = 'The requested resource was not found';
           break;
         case 422:
-          error.message = 'Validation error';
+          // Don't show toast for validation errors as they're handled in forms
+          shouldShowToast = false;
+          errorMessage = 'Validation error';
           error.validationErrors = error.response.data.errors;
           break;
         case 429:
-          error.message = 'Too many requests. Please try again later';
+          errorMessage = 'Too many requests. Please try again later';
           break;
         case 500:
-          error.message = 'Internal server error. Please try again later';
+          errorMessage = 'Internal server error. Please try again later';
           break;
         default:
-          error.message = error.response?.data?.message || 'An unexpected error occurred';
+          errorMessage = error.response?.data?.message || 'An unexpected error occurred';
       }
+
+      // Show toast for appropriate errors
+      if (shouldShowToast && globalToast && errorMessage) {
+        globalToast.error(errorMessage);
+      }
+
+      error.message = errorMessage;
 
       return Promise.reject({
         ...error,
@@ -44,4 +58,4 @@ export const setupErrorInterceptor = (axiosInstance) => {
       });
     }
   );
-}; 
+};

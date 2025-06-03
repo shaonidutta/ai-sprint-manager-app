@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import {
   HomeIcon, ViewBoardsIcon, ProjectIcon,
-  SprintIcon, SettingsIcon
+  SprintIcon, TeamsIcon, SettingsIcon
 } from '../common/Icons';
 
 const Sidebar = ({ isMobile, isOpen, onClose }) => {
@@ -51,6 +51,7 @@ const Sidebar = ({ isMobile, isOpen, onClose }) => {
     { id: 'projects', path: '/projects', icon: ProjectIcon, label: 'Projects' },
     { id: 'boards', path: '/board', icon: ViewBoardsIcon, label: 'Boards' },
     { id: 'sprints', path: '/sprints', icon: SprintIcon, label: 'Sprints' },
+    { id: 'teams', path: '/teams', icon: TeamsIcon, label: 'Teams' },
     { id: 'settings', path: '/settings', icon: SettingsIcon, label: 'Settings' },
   ];
 

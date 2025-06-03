@@ -23,6 +23,7 @@ import AISprintPlanningPage from '../pages/ai/SprintPlanningPage';
 import ScopeCreepPage from '../pages/ai/ScopeCreepPage';
 import RiskAssessmentPage from '../pages/ai/RiskAssessmentPage';
 import RetrospectivePage from '../pages/ai/RetrospectivePage';
+import TeamsPage from '../pages/teams/TeamsPage';
 
 export const routes = [
   {
@@ -103,6 +104,10 @@ export const routes = [
               {
                 path: '/settings',
                 element: <SettingsPage />,
+              },
+              {
+                path: '/teams',
+                element: <TeamsPage />,
               },
               {
                 path: '/ai/dashboard/:projectId',

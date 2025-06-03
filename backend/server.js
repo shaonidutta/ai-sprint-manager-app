@@ -99,7 +99,7 @@ if (process.env.NODE_ENV !== 'test') {
 app.get('/health', async (req, res) => {
   try {
     const dbHealth = await database.healthCheck();
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -112,6 +112,36 @@ app.get('/health', async (req, res) => {
     });
   } catch (error) {
     logger.error('Health check failed:', error);
+    res.status(503).json({
+      success: false,
+      error: {
+        code: 'HEALTH_CHECK_FAILED',
+        message: 'Service temporarily unavailable'
+      }
+    });
+  }
+});
+
+// API Health check endpoint for Render
+app.get('/api/v1/health', async (req, res) => {
+  try {
+    const dbHealth = await database.healthCheck();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: process.env.npm_package_version || '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        database: dbHealth,
+        ai: {
+          status: aiService.isReady() ? 'ready' : 'not_available'
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('API Health check failed:', error);
     res.status(503).json({
       success: false,
       error: {

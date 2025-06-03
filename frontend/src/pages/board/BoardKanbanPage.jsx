@@ -315,7 +315,7 @@ const BoardKanbanPage = () => {
         navigate(`/board?project=${firstProject.id}`, { replace: true });
       }
     } catch (err) {
-      console.error('Failed to fetch projects:', err);
+      // Error handled by global toast
     }
   };
 
@@ -336,7 +336,6 @@ const BoardKanbanPage = () => {
         setSelectedBoard(boardsData[0].id.toString());
       }
     } catch (err) {
-      console.error('Failed to fetch boards:', err);
       setError('Failed to load boards. Please try again.');
     }
   };
@@ -356,7 +355,6 @@ const BoardKanbanPage = () => {
       const activeSprintData = sprints.find(sprint => sprint.status === 'Active');
       setActiveSprint(activeSprintData || null);
     } catch (err) {
-      console.error('Failed to fetch active sprint:', err);
       setActiveSprint(null);
     }
   };
@@ -375,7 +373,6 @@ const BoardKanbanPage = () => {
       setIssues(response.data.data.issues || []);
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch issues:', err);
       setError('Failed to load issues. Please try again.');
       setIssues([]);
     } finally {
@@ -429,7 +426,6 @@ const BoardKanbanPage = () => {
   const handleDragStart = (event) => {
     // Check if sprint is active before allowing drag
     if (!activeSprint || activeSprint.status !== 'Active') {
-      console.log('Drag prevented: No active sprint');
       return;
     }
 
@@ -458,7 +454,6 @@ const BoardKanbanPage = () => {
 
     // Check if sprint is active before allowing drop
     if (!activeSprint || activeSprint.status !== 'Active') {
-      console.log('Drop prevented: No active sprint');
       return;
     }
 
@@ -502,10 +497,7 @@ const BoardKanbanPage = () => {
 
       // Update issue status via API
       await api.issues.update(activeIssue.id, { status: newStatus });
-
-      console.log(`Successfully moved issue ${activeIssue.id} to ${newStatus}`);
     } catch (err) {
-      console.error('Failed to update issue status:', err);
 
       // Rollback optimistic update
       setIssues(originalIssues);
@@ -522,25 +514,19 @@ const BoardKanbanPage = () => {
 
   // Handle issue card click
   const handleIssueClick = (issue) => {
-    console.log('🎯 Board issue clicked:', issue);
-    console.log('🎯 Board issue ID:', issue?.id);
     setSelectedIssue(issue);
     setShowIssueDetailModal(true);
   };
 
   // Handle issue update from modal
   const handleIssueUpdated = (updatedIssue) => {
-    console.log('🔄 Handling issue update:', updatedIssue);
-
     if (!updatedIssue || !updatedIssue.id) {
-      console.error('❌ Invalid updated issue data:', updatedIssue);
       return;
     }
 
     setIssues(prev => {
       const newIssues = prev.map(issue => {
         if (!issue || !issue.id) {
-          console.warn('⚠️ Found invalid issue in array:', issue);
           return issue; // Keep invalid issues as-is to prevent crashes
         }
 
@@ -551,14 +537,12 @@ const BoardKanbanPage = () => {
             ...updatedIssue, // Override with updated fields
             issue_key: updatedIssue.issue_key || issue.issue_key || `#${updatedIssue.id}` // Ensure issue_key exists
           };
-          console.log('✅ Updated issue:', mergedIssue);
           return mergedIssue;
         }
 
         return issue;
       }).filter(issue => issue && issue.id); // Filter out any null/undefined issues
 
-      console.log('🔄 New issues array length:', newIssues.length);
       return newIssues;
     });
   };
@@ -666,8 +650,8 @@ const BoardKanbanPage = () => {
           </div>
         </div>
 
-        {/* Project/Board Info */}
-        {selectedProjectData && selectedBoardData && (
+        {/* Project Info Only */}
+        {selectedProjectData && (
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-blue-500 text-white rounded flex items-center justify-center text-sm font-medium">
@@ -675,11 +659,8 @@ const BoardKanbanPage = () => {
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
-                  {selectedBoardData.name}
-                </h1>
-                <p className="text-sm text-gray-600">
                   {selectedProjectData.name}
-                </p>
+                </h1>
               </div>
             </div>
 

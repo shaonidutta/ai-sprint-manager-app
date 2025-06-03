@@ -33,7 +33,6 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -136,11 +135,6 @@ axiosInstance.interceptors.response.use(
 
     // Handle other errors
     const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
-    console.error('API Error:', {
-      status: error.response?.status,
-      message: errorMessage,
-      url: error.config?.url,
-    });
 
     return Promise.reject({
       ...error,
