@@ -167,20 +167,51 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
   const handleSaveEdit = async () => {
     try {
       setLoading(true);
-      const response = await api.issues.update(issueId, editForm);
+      setError(null);
+
+      // Validate required fields
+      if (!editForm.title?.trim()) {
+        throw new Error('Title is required');
+      }
+
+      // Prepare update data
+      const updateData = {
+        ...editForm,
+        title: editForm.title.trim(),
+        description: editForm.description?.trim() || '',
+        // Only include blocked_reason if status is 'Blocked'
+        blocked_reason: editForm.status === 'Blocked' ? (editForm.blocked_reason?.trim() || '') : null,
+        // Convert story_points to number if present
+        story_points: editForm.story_points ? parseInt(editForm.story_points) : null,
+        // Convert assignee_id to number if present
+        assignee_id: editForm.assignee_id ? parseInt(editForm.assignee_id) : null
+      };
+
+      // If status is changing to 'Blocked' and no blocked_reason is provided
+      if (editForm.status === 'Blocked' && !updateData.blocked_reason) {
+        throw new Error('Please provide a reason for blocking this issue');
+      }
+
+      const response = await api.issues.update(issueId, updateData);
 
       if (response.data.success) {
         const updatedIssue = response.data.data.issue;
         setIssue(updatedIssue);
         setIsEditing(false);
-        onIssueUpdated(updatedIssue);
+        
+        // Notify parent component
+        if (onIssueUpdated) {
+          onIssueUpdated(updatedIssue);
+        }
 
         // Close the modal after successful save
         onClose();
+      } else {
+        throw new Error(response.data.message || 'Failed to update issue');
       }
     } catch (err) {
       console.error('Failed to update issue:', err);
-      setError('Failed to update issue. Please try again.');
+      setError(err.message || err.response?.data?.message || 'Failed to update issue. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -575,41 +575,39 @@ const JiraSprintPlanningPage = () => {
     }
   }, [projectId, selectedProject, actions]);
 
-
-
   // Handle drag and drop
   const handleDragStart = (event) => {
-    setActiveId(event.active.id);
+    const { active } = event;
+    
+    // Find the issue being dragged
+    const draggedIssue = backlogIssues.find(issue => issue?.id?.toString() === active.id) ||
+      sprints.flatMap(sprint => sprint.issues || []).find(issue => issue?.id?.toString() === active.id);
+
+    // Check if issue is blocked
+    if (draggedIssue?.blocked_reason) {
+      // Prevent dragging by not setting activeId
+      alert('This issue is blocked and cannot be moved. Please unblock it first.');
+      return;
+    }
+
+    setActiveId(active.id);
   };
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-
-
-
-    // Always reset active ID first to prevent UI issues
+    
+    // Reset drag state
     setActiveId(null);
+    setDragLoading(false);
 
-    if (!over) {
-      return;
-    }
-
-    // Set loading state for drag operations
-    setDragLoading(true);
+    if (!over) return;
 
     const activeId = active.id;
     const overId = over.id;
-
-
-
-    // Find the active issue from backlog or any sprint
+    
+    // Find the active issue from backlog or sprints
     let activeIssue = backlogIssues.find(issue => issue?.id?.toString() === activeId);
     let sourceSprintId = null;
-
-    console.log('🔍 SEARCHING FOR ACTIVE ISSUE:', {
-      foundInBacklog: !!activeIssue,
-      backlogIssueIds: backlogIssues.map(i => i?.id)
-    });
 
     // If not found in backlog, search in sprints
     if (!activeIssue) {
@@ -618,174 +616,82 @@ const JiraSprintPlanningPage = () => {
         if (foundIssue) {
           activeIssue = foundIssue;
           sourceSprintId = sprint.id;
-          console.log('🔍 FOUND IN SPRINT:', {
-            sprintId: sprint.id,
-            sprintName: sprint.name,
-            issueId: foundIssue.id
-          });
           break;
         }
       }
     }
 
-    if (!activeIssue) {
-      console.error('❌ Active issue not found:', {
-        activeId,
-        availableBacklogIds: backlogIssues.map(i => i?.id),
-        availableSprintIds: sprints.flatMap(s => s.issues?.map(i => i?.id) || [])
-      });
-      setDragLoading(false);
+    if (!activeIssue) return;
+
+    // Double-check if issue is blocked
+    if (activeIssue.blocked_reason) {
+      alert('This issue is blocked and cannot be moved. Please unblock it first.');
       return;
     }
 
-    // console.log('✅ ACTIVE ISSUE FOUND:', {
-    //   issueId: activeIssue.id,
-    //   issueTitle: activeIssue.title,
-    //   sourceSprintId
-    // });
+    try {
+      setDragLoading(true);
 
-    // Handle dropping on sprint
-    if (overId.startsWith('sprint-')) {
-      const targetSprintId = parseInt(overId.replace('sprint-', ''));
-
-      console.log('🎯 DROPPING ON SPRINT:', {
-        targetSprintId,
-        sourceSprintId,
-        isSameSprint: sourceSprintId === targetSprintId
-      });
-
-      // Don't move if it's the same sprint
-      if (sourceSprintId === targetSprintId) {
-       // console.log('⚠️ Same sprint, skipping move');
-        setDragLoading(false);
-        return;
-      }
-
-      try {
-        // console.log('🔄 UPDATING ISSUE API CALL:', {
-        //   issueId: activeIssue.id,
-        //   newSprintId: targetSprintId
-        // });
-
-        // Update issue to assign it to the target sprint
-        await api.issues.update(activeIssue.id, { sprint_id: targetSprintId });
-
-        //console.log('✅ API UPDATE SUCCESS:', updateResponse);
-
-        // Use context actions instead of local state setters
-        if (sourceSprintId) {
-          // Moving from sprint to sprint
-          //console.log('🔄 Moving from sprint to sprint via context');
-          actions.moveIssueToSprint(activeIssue.id, targetSprintId, sourceSprintId);
-        } else {
-          // Moving from backlog to sprint
-          //console.log('🔄 Moving from backlog to sprint via context');
-          actions.moveIssueToSprint(activeIssue.id, targetSprintId);
-        }
-
-        //console.log(`✅ Successfully moved issue ${activeIssue.id} to sprint ${targetSprintId}`);
-
-        // Verify the move by refreshing data from backend
-        //console.log('🔄 Refreshing data from backend...');
-        await apiActions.refreshAllData(selectedBoard);
-        //console.log('✅ Data refresh complete');
-
-      } catch (err) {
-        //console.error('❌ Failed to move issue to sprint:', err);
-        alert('Failed to move issue to sprint. Please try again.');
-
-        // Revert optimistic updates and refresh from backend
-        await apiActions.refreshAllData(selectedBoard);
-      }
-    }
-
-    // Handle dropping on backlog
-    else if (overId === 'backlog') {
-      console.log('🎯 DROPPING ON BACKLOG:', {
-        sourceSprintId,
-        hasSourceSprint: !!sourceSprintId
-      });
-
-      // Only allow moving from sprint to backlog
-      if (!sourceSprintId) {
-        //console.log('⚠️ No source sprint, skipping backlog move');
-        setDragLoading(false);
-        return;
-      }
-
-      // Find the source sprint to check if it's active
-      const sourceSprint = sprints.find(sprint => sprint.id === sourceSprintId);
-
-      // console.log('🔍 Drop to backlog - Source sprint:', {
-      //   sprintName: sourceSprint?.name,
-      //   sprintStatus: sourceSprint?.status,
-      //   isActive: sourceSprint?.status === 'Active'
-      // });
-
-      // Prevent moving issues from active sprints to backlog
-      if (sourceSprint && sourceSprint.status === 'Active') {
-        //console.log('🚫 Cannot move issue from active sprint to backlog');
-        alert('Cannot move issues from an active sprint back to backlog. Complete the sprint first.');
-        setDragLoading(false);
-        return;
-      }
-
-      try {
-        console.log('🔄 REMOVING SPRINT ASSIGNMENT:', {
-          issueId: activeIssue.id,
-          removingFromSprintId: sourceSprintId
+      if (overId === 'backlog') {
+        // Moving to backlog
+        await api.issues.update(activeIssue.id, {
+          sprint_id: null,  // Set sprint_id to null for backlog items
+          status: 'To Do'  // Reset status when moving to backlog
         });
+      } else if (overId.startsWith('sprint-')) {
+        // Moving to a sprint
+        const targetSprintId = parseInt(overId.replace('sprint-', ''));
+        
+        // Don't move if it's the same sprint
+        if (sourceSprintId === targetSprintId) return;
 
-        // Update issue to remove sprint assignment
-        const updateResponse = await api.issues.update(activeIssue.id, { sprint_id: null });
-
-        console.log('✅ API UPDATE SUCCESS:', updateResponse);
-
-        // Use context action to move issue to backlog
-        console.log('🔄 Moving to backlog via context');
-        actions.moveIssueToBacklog(activeIssue.id, sourceSprintId);
-
-        console.log(`✅ Successfully moved issue ${activeIssue.id} to backlog`);
-
-        // Verify the move by refreshing data from backend
-        console.log('🔄 Refreshing data from backend...');
-        await apiActions.refreshAllData(selectedBoard);
-        console.log('✅ Data refresh complete');
-
-      } catch (err) {
-        console.error('❌ Failed to move issue to backlog:', err);
-        alert('Failed to move issue to backlog. Please try again.');
-
-        // Revert optimistic updates and refresh from backend
-        await apiActions.refreshAllData(selectedBoard);
+        // Get the target sprint to check its status
+        const targetSprint = sprints.find(sprint => sprint.id === targetSprintId);
+        
+        await api.issues.update(activeIssue.id, {
+          sprint_id: targetSprintId,
+          status: 'To Do'  // Reset status when moving to a new sprint
+        });
       }
-    }
 
-    // Always reset loading state
-    setDragLoading(false);
+      // Refresh the data
+      await apiActions.refreshAllData(selectedBoard);
+    } catch (error) {
+      console.error('Error updating issue:', error);
+      setError('Failed to update issue. Please try again.');
+    } finally {
+      setDragLoading(false);
+    }
   };
 
-  // Start sprint
+  // Handle start sprint
   const handleStartSprint = async (sprintId) => {
     try {
-      // console.log('🚀 Starting sprint:', sprintId); // Disabled for drag-drop debugging
+      // Get the sprint's issues before starting
+      const sprintToStart = sprints.find(sprint => sprint.id === sprintId);
+      const sprintIssues = sprintToStart?.issues || [];
 
       // Start the sprint
       await api.sprints.start(sprintId);
-      // console.log('🚀 Sprint start response:', response); // Disabled for drag-drop debugging
+
+      // Update all issues in the sprint to "To Do" status
+      const updatePromises = sprintIssues.map(issue => 
+        api.issues.update(issue.id, { 
+          status: 'To Do',
+          sprint_id: sprintId // Ensure sprint_id is set
+        })
+      );
+      
+      await Promise.all(updatePromises);
 
       // Refresh all data to ensure consistency
       await apiActions.refreshAllData(selectedBoard);
 
-      // console.log('🚀 Data refreshed after sprint start'); // Disabled for drag-drop debugging
-
-      // Navigate to board view with correct URL pattern
+      // Navigate to board view
       navigate(`/board?project=${selectedProject}`);
     } catch (err) {
       console.error('Failed to start sprint:', err);
       alert('Failed to start sprint. Please try again.');
-
-      // Refresh data even on error to ensure consistency
       await apiActions.refreshAllData(selectedBoard);
     }
   };

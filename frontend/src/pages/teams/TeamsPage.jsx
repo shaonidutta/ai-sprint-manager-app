@@ -90,18 +90,6 @@ const TeamsPage = () => {
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
               <Button
-                variant="outline"
-                className="flex items-center justify-center space-x-2 min-h-[44px] transition-all duration-150 hover:shadow-md"
-              >
-                <span>Manage users</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center justify-center space-x-2 min-h-[44px] transition-all duration-150 hover:shadow-md"
-              >
-                <span>Create team</span>
-              </Button>
-              <Button
                 className="min-h-[44px] transition-all duration-150 hover:shadow-md"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,32 +240,6 @@ const TeamsPage = () => {
               </p>
             </div>
           )}
-        </div>
-
-        {/* Teams Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Teams</h2>
-          
-          {/* Empty State - matching the reference image */}
-          <div className="text-center py-16">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 mx-auto mb-6 text-gray-300">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Activate Windows</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Go to Settings to activate Windows.
-              </p>
-              <Button
-                variant="outline"
-                className="min-h-[44px] transition-all duration-150 hover:shadow-md"
-              >
-                Go to Settings
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
