@@ -45,6 +45,14 @@ export const api = {
       update: (projectId, userId, data) => axiosInstance.put(API_ENDPOINTS.PROJECTS.MEMBERS.UPDATE(projectId, userId), data),
       remove: (projectId, userId) => axiosInstance.delete(API_ENDPOINTS.PROJECTS.MEMBERS.REMOVE(projectId, userId)),
     },
+
+    // Skills management methods
+    getSkills: (projectId) => axiosInstance.get(API_ENDPOINTS.PROJECTS.SKILLS.LIST(projectId)),
+    getSkillsStats: (projectId) => axiosInstance.get(API_ENDPOINTS.PROJECTS.SKILLS.STATS(projectId)),
+    getUserSkills: (projectId, userId) => axiosInstance.get(API_ENDPOINTS.PROJECTS.SKILLS.USER_SKILLS(projectId, userId)),
+    addSkill: (projectId, data) => axiosInstance.post(API_ENDPOINTS.PROJECTS.SKILLS.ADD(projectId), data),
+    updateSkill: (skillId, data) => axiosInstance.put(API_ENDPOINTS.PROJECTS.SKILLS.UPDATE(skillId), data),
+    deleteSkill: (skillId) => axiosInstance.delete(API_ENDPOINTS.PROJECTS.SKILLS.DELETE(skillId)),
   },
 
   boards: {
