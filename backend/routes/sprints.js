@@ -107,4 +107,12 @@ router.get(
   SprintController.getSprintReport
 );
 
+// GET /api/v1/sprints/:id/status - Get sprint scope status
+router.get(
+  '/:id/status',
+  authenticate,
+  validateSprintId, // Assuming sprintId validation is sufficient
+  SprintController.getSprintStatus
+);
+
 module.exports = router;

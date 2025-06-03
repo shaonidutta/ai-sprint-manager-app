@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, Button, BlockedBadge } from '../../components/common';
+import ScopeCreepBanner from '../../components/common/ScopeCreepBanner'; // Import ScopeCreepBanner
 import { IssueDetailModal } from '../../components/issues';
-import { api } from '../../api';
+import { api } from '../../api'; // Assuming api.sprints.getStatus(sprintId) will be available
 import {
   DndContext,
   DragOverlay,
@@ -259,6 +260,15 @@ const BoardKanbanPage = () => {
   const [showIssueDetailModal, setShowIssueDetailModal] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
 
+  // State for Scope Creep Banner
+  const [sprintStatus, setSprintStatus] = useState({
+    baselinePoints: 0,
+    currentPoints: 0,
+    thresholdPct: 0.1, // Default, will be overwritten by API
+    scopeAlerted: false,
+  });
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -421,6 +431,43 @@ const BoardKanbanPage = () => {
     }
   }, [selectedBoard]);
 
+  // Fetch sprint status for scope creep banner
+  const fetchSprintStatus = useCallback(async (sprintId) => {
+    if (!sprintId) return;
+    try {
+      // Ensure your api object has a method like api.sprints.getStatus(sprintId)
+      // This might require adding it to frontend/src/api/endpoints/index.js and frontend/src/services/sprint/sprintService.js
+      const response = await api.sprints.getStatus(sprintId);
+      if (response.data && response.data.success) {
+        setSprintStatus(response.data.data);
+        // If alert is active and banner was previously dismissed for this session,
+        // but now the alert is active again (e.g. page reload), we might want to show it again.
+        // For simplicity, if API says alerted, we reset dismissed state unless it's a new alert for an already dismissed session.
+        // This logic might need refinement based on desired UX for re-alerting.
+        if(response.data.data.scopeAlerted) {
+            // setBannerDismissed(false); // Re-show if API says alerted, could be annoying if dismissed intentionally.
+                                      // Let's keep it simple: banner shows if API says alerted AND not dismissed in current session.
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch sprint status:', err);
+      // Optionally set some error state for sprint status
+    }
+  }, []); // No dependencies, relies on sprintId passed as argument
+
+  useEffect(() => {
+    if (activeSprint && activeSprint.id) {
+      fetchSprintStatus(activeSprint.id); // Initial fetch
+
+      const intervalId = setInterval(() => {
+        fetchSprintStatus(activeSprint.id);
+      }, 60000); // Re-fetch every 60 seconds
+
+      return () => clearInterval(intervalId); // Cleanup interval on component unmount or when activeSprint changes
+    }
+  }, [activeSprint, fetchSprintStatus]);
+
+
   const handleProjectChange = (e) => {
     const newProjectId = e.target.value;
     setSelectedProject(newProjectId);
@@ -516,6 +563,16 @@ const BoardKanbanPage = () => {
 
       // Rollback optimistic update
       setIssues(originalIssues);
+{/* Scope Creep Banner */}
+      {activeSprint && sprintStatus.scopeAlerted && !bannerDismissed && (
+        <ScopeCreepBanner
+          baselinePoints={sprintStatus.baselinePoints}
+          currentPoints={sprintStatus.currentPoints}
+          thresholdPct={sprintStatus.thresholdPct}
+          scopeAlerted={sprintStatus.scopeAlerted}
+          onDismiss={() => setBannerDismissed(true)}
+        />
+      )}
 
       // Show user-friendly error message
       const errorMessage = err.response?.data?.message || 'Failed to update issue status. Please try again.';

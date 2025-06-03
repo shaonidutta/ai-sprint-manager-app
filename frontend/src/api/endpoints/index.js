@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
     START: (id) => `/sprints/${id}/start`,
     COMPLETE: (id) => `/sprints/${id}/complete`,
     BURNDOWN: (id) => `/sprints/${id}/burndown`,
+    STATUS: (id) => `/sprints/${id}/status`, // Added for scope creep status
     ADD_ISSUES: (id) => `/sprints/${id}/issues`,
     REMOVE_ISSUE: (id, issueId) => `/sprints/${id}/issues/${issueId}`
   },

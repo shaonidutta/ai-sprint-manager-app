@@ -15,6 +15,10 @@ class Sprint {
     this.created_by = data.created_by || data.createdBy || null;
     this.created_at = data.created_at || data.createdAt || null;
     this.updated_at = data.updated_at || data.updatedAt || null;
+    // New fields for scope creep
+    this.baseline_points = data.baseline_points !== undefined ? data.baseline_points : (data.baselinePoints !== undefined ? data.baselinePoints : 0);
+    this.scope_threshold_pct = data.scope_threshold_pct !== undefined ? data.scope_threshold_pct : (data.scopeThresholdPct !== undefined ? data.scopeThresholdPct : 0.10);
+    this.scope_alerted = data.scope_alerted !== undefined ? data.scope_alerted : (data.scopeAlerted !== undefined ? data.scopeAlerted : false);
   }
 
   // Validation
@@ -69,7 +73,15 @@ class Sprint {
   // Static methods
   static async create(sprintData) {
     try {
-      const sprint = new Sprint(sprintData);
+      // Initialize new fields with defaults if not provided
+      const dataWithDefaults = {
+        ...sprintData,
+        baseline_points: 0, // Default for new sprints
+        scope_alerted: false, // Default for new sprints
+        // Use provided threshold or default to 0.10 (10%)
+        scope_threshold_pct: sprintData.scope_threshold_pct !== undefined ? sprintData.scope_threshold_pct : (sprintData.scopeThresholdPct !== undefined ? sprintData.scopeThresholdPct : 0.10)
+      };
+      const sprint = new Sprint(dataWithDefaults);
       sprint.validate();
 
       // Check if board exists and user has permission
@@ -92,8 +104,8 @@ class Sprint {
       }
 
       const query = `
-        INSERT INTO sprints (board_id, name, goal, start_date, end_date, capacity_story_points, status, created_by) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO sprints (board_id, name, goal, start_date, end_date, capacity_story_points, status, created_by, baseline_points, scope_threshold_pct, scope_alerted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
       const values = [
@@ -104,7 +116,10 @@ class Sprint {
         sprint.end_date,
         sprint.capacity_story_points,
         sprint.status,
-        sprint.created_by
+        sprint.created_by,
+        sprint.baseline_points,
+        sprint.scope_threshold_pct,
+        sprint.scope_alerted
       ];
       
       const result = await database.query(query, values);
@@ -267,7 +282,9 @@ class Sprint {
         const query = `
           UPDATE sprints SET
             name = ?, goal = ?, start_date = ?, end_date = ?,
-            capacity_story_points = ?, status = ?, updated_at = NOW()
+            capacity_story_points = ?, status = ?,
+            baseline_points = ?, scope_threshold_pct = ?, scope_alerted = ?,
+            updated_at = NOW()
           WHERE id = ?
         `;
 
@@ -278,6 +295,9 @@ class Sprint {
           this.end_date,
           this.capacity_story_points,
           this.status,
+          this.baseline_points,
+          this.scope_threshold_pct,
+          this.scope_alerted,
           this.id
         ];
 
@@ -320,12 +340,25 @@ class Sprint {
     try {
       this.status = 'Active';
       if (!this.start_date) {
+        // Ensure YYYY-MM-DD format for DATE SQL type
         this.start_date = new Date().toISOString().split('T')[0];
       }
 
-      await this.save();
+      // Calculate total_points from issues
+      const [pointsResult] = await database.query(
+        `SELECT COALESCE(SUM(story_points), 0) AS total_points
+         FROM issues
+         WHERE sprint_id = ?`,
+        [this.id]
+      );
+      const total_points = pointsResult.total_points;
 
-      logger.info(`Sprint ${this.id} started by user ${userId}`);
+      this.baseline_points = total_points;
+      this.scope_alerted = false; // Reset scope_alerted flag
+
+      await this.save(); // This will now save the new fields as well
+
+      logger.info(`Sprint ${this.id} started by user ${userId}, baseline set to ${total_points}`);
       return this;
     } catch (error) {
       logger.error('Error starting sprint:', error);
