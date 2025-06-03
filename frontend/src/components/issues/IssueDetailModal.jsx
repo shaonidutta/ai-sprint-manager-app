@@ -175,7 +175,9 @@ const IssueDetailModal = ({ isOpen, onClose, issueId, onIssueUpdated, onIssueDel
     try {
       setLoading(true);
       await api.issues.delete(issueId);
-      onIssueDeleted(issueId);
+      if (onIssueDeleted) {
+        onIssueDeleted(issueId);
+      }
       onClose();
     } catch (err) {
       console.error('Failed to delete issue:', err);

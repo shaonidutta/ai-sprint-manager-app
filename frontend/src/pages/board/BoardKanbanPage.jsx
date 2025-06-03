@@ -716,7 +716,7 @@ const BoardKanbanPage = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Backlog
+                All Issues
               </button>
             </div>
           </div>
