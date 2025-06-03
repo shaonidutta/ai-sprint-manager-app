@@ -122,11 +122,7 @@ const Header = ({ onMenuClick, isMobile }) => {
                 <MenuIcon className="h-6 w-6" />
               </button>
             )}
-            {/* Logo/Title */}
-            <div className="flex-shrink-0 font-semibold text-lg text-gray-900 truncate">
-              <span className="hidden sm:inline">Sprint Manager</span>
-              <span className="sm:hidden">Sprint</span>
-            </div>
+            {/* Logo/Title - Removed text as requested */}
           </div>
 
           {/* Right section - Actions */}
