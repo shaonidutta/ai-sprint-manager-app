@@ -359,11 +359,11 @@ const SprintPlanningAI = ({ projectId, boardId, onPlanGenerated, className = '' 
               name="tasksList"
               value={formData.tasksList}
               onChange={handleInputChange}
-              placeholder={`Paste all your tasks in numbered format. Example:
-1. Implement user authentication (Critical)
-2. Create dashboard UI components (High)
-3. Setup database migrations (Medium)
-4. Write unit tests (Low)
+              placeholder={`Paste all your tasks. Example:
+ Implement user authentication (Critical)
+ Create dashboard UI components (High)
+ Setup database migrations (Medium)
+ Write unit tests (Low)
 
 Note: Add priority in brackets (Critical/High/Medium/Low) or AI will decide automatically`}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 ease-in-out hover:border-blue-300 hover:shadow-sm resize-none"
